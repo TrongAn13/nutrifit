@@ -8,8 +8,6 @@ import '../../data/models/routine_model.dart';
 import '../../data/models/workout_plan_model.dart';
 import '../../data/repositories/workout_repository.dart';
 import '../../logic/plan_detail_cubit.dart';
-import '../../logic/workout_template_bloc.dart';
-import '../../logic/workout_template_event.dart';
 import '../widgets/plan_statistics_bottom_sheet.dart';
 
 /// Displays full detail of a [WorkoutPlanModel], allowing editing
@@ -25,6 +23,7 @@ class PlanDetailScreen extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Đã lưu giáo án thành công!')),
           );
+          context.pop();
         }
         if (state.errorMessage != null) {
           ScaffoldMessenger.of(
@@ -37,127 +36,70 @@ class PlanDetailScreen extends StatelessWidget {
         final routine = state.currentRoutine;
 
         return Scaffold(
-          appBar: _buildAppBar(context, plan, state.isSaving),
-          body: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            children: [
-              // ── Section 1: Routine Header ──
-              _RoutineHeader(routine: routine),
-              const SizedBox(height: 16),
-
-              // ── Section 2: Action Buttons ──
-              _ActionButtons(
-                onRename: () => _showRenameDialog(context, routine),
-                onCopy: () => _showCopyDialog(
-                  context,
-                  plan.routines.length,
-                  state.currentRoutineIndex,
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              children: [
+                // ── Custom Header ──
+                _CompactHeader(
+                  plan: plan,
+                  isSaving: state.isSaving,
+                  onBack: () => context.pop(),
+                  onStatistics: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => PlanStatisticsBottomSheet(plan: plan),
+                    );
+                  },
+                  onSave: () => context.read<PlanDetailCubit>().savePlan(),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
-              // ── Section 3: Notes ──
-              const _NotesSection(),
-              const SizedBox(height: 20),
+                // ── Active Routine Card (compact) ──
+                _ActiveRoutineCard(
+                  routine: routine,
+                  onRename: () => _showRenameDialog(context, routine),
+                  onCopy: () => _showCopyDialog(
+                    context,
+                    plan.routines.length,
+                    state.currentRoutineIndex,
+                  ),
+                ),
+                const SizedBox(height: 12),
 
-              // ── Section 4: Add Exercise Button ──
-              _AddExerciseButton(
-                onPressed: () => _navigateToExerciseLibrary(context),
-              ),
-              const SizedBox(height: 16),
+                // ── Notes (compact) ──
+                const _NotesSection(),
+                const SizedBox(height: 12),
 
-              // ── Section 5: Exercise List ──
-              _ExerciseList(
-                exercises: routine?.exercises ?? [],
-                onRemove: (i) =>
-                    context.read<PlanDetailCubit>().removeExercise(i),
-                onAddTap: () => _navigateToExerciseLibrary(context),
-              ),
-              const SizedBox(height: 24),
+                // ── Add Exercise Button ──
+                _AddExerciseButton(
+                  onPressed: () => _navigateToExerciseLibrary(context),
+                ),
+                const SizedBox(height: 12),
 
-              // ── Section 6: Plan Structure ──
-              _PlanStructure(
-                plan: plan,
-                currentIndex: state.currentRoutineIndex,
-                onRoutineSelected: (i) =>
-                    context.read<PlanDetailCubit>().selectRoutine(i),
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
-          bottomNavigationBar: _ActivatePlanBar(
-            plan: plan,
-          ),
+                // ── Exercise List ──
+                _ExerciseList(
+                  exercises: routine?.exercises ?? [],
+                  onRemove: (i) =>
+                      context.read<PlanDetailCubit>().removeExercise(i),
+                  onAddTap: () => _navigateToExerciseLibrary(context),
+                ),
+                const SizedBox(height: 16),
+
+                // ── Plan Structure ──
+                _PlanStructure(
+                  plan: plan,
+                  currentIndex: state.currentRoutineIndex,
+                  onRoutineSelected: (i) =>
+                      context.read<PlanDetailCubit>().selectRoutine(i),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          )
         );
       },
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(
-    BuildContext context,
-    WorkoutPlanModel plan,
-    bool isSaving,
-  ) {
-    final theme = Theme.of(context);
-
-    return AppBar(
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            plan.name,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            '${plan.totalWeeks} tuần - ${plan.trainingDays.length} buổi/tuần',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        OutlinedButton.icon(
-          onPressed: () {
-            showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) => PlanStatisticsBottomSheet(plan: plan),
-            );
-          },
-          icon: const Icon(Icons.bar_chart_rounded, size: 18),
-          label: const Text('Thống kê'),
-          style: OutlinedButton.styleFrom(
-            visualDensity: VisualDensity.compact,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-          ),
-        ),
-        const SizedBox(width: 8),
-        FilledButton(
-          onPressed: isSaving
-              ? null
-              : () => context.read<PlanDetailCubit>().savePlan(),
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.deepOrange,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            visualDensity: VisualDensity.compact,
-          ),
-          child: isSaving
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Lưu'),
-        ),
-        const SizedBox(width: 12),
-      ],
     );
   }
 
@@ -225,12 +167,12 @@ class PlanDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             TextField(
               controller: controller,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
               autofocus: true,
               decoration: InputDecoration(
-                labelText: 'Buổi số',
-                hintText: 'VD: 3',
-                helperText: 'Nhập số từ 1 đến $totalRoutines',
+                labelText: 'Các buổi số',
+                hintText: 'VD: 3, 4, 5',
+                helperText: 'Nhập số từ 1 đến $totalRoutines, cách nhau bởi dấu phẩy',
               ),
             ),
           ],
@@ -242,14 +184,28 @@ class PlanDetailScreen extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () {
-              final target = int.tryParse(controller.text.trim());
-              if (target != null && target >= 1 && target <= totalRoutines) {
-                context.read<PlanDetailCubit>().copyToRoutine(
-                  target - 1,
-                ); // 0-indexed
+              final text = controller.text.trim();
+              if (text.isEmpty) return;
+              
+              final targets = text
+                  .split(',')
+                  .map((e) => int.tryParse(e.trim()))
+                  .where((e) => e != null && e >= 1 && e <= totalRoutines)
+                  .map((e) => e!)
+                  .toSet()
+                  .toList();
+                  
+              if (targets.isNotEmpty) {
+                for (final target in targets) {
+                  if (target - 1 != currentIdx) {
+                    context.read<PlanDetailCubit>().copyToRoutine(target - 1);
+                  }
+                }
                 Navigator.pop(dialogCtx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Đã sao chép sang Buổi tập $target')),
+                  SnackBar(
+                    content: Text('Đã sao chép sang các Buổi: ${targets.join(', ')}'),
+                  ),
                 );
               }
             },
@@ -285,95 +241,265 @@ class PlanDetailScreen extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 1: Routine Header
+// Compact Header
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _RoutineHeader extends StatelessWidget {
-  final RoutineModel? routine;
+class _CompactHeader extends StatelessWidget {
+  final WorkoutPlanModel plan;
+  final bool isSaving;
+  final VoidCallback onBack;
+  final VoidCallback onStatistics;
+  final VoidCallback onSave;
 
-  const _RoutineHeader({this.routine});
+  const _CompactHeader({
+    required this.plan,
+    required this.isSaving,
+    required this.onBack,
+    required this.onStatistics,
+    required this.onSave,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Row(
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.deepOrange.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.calendar_today_rounded,
-            color: Colors.deepOrange,
-            size: 22,
+        // Back button
+        IconButton(
+          onPressed: onBack,
+          icon: const Icon(Icons.arrow_back_rounded),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.grey.shade100,
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 8),
+
+        // Title & Subtitle
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                routine?.name ?? 'Buổi tập',
-                style: theme.textTheme.titleLarge?.copyWith(
+                'GA: ${plan.name}',
+                style: const TextStyle(
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1C29),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
-              Text(
-                '${routine?.exercises.length ?? 0} động tác',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: '${plan.totalWeeks} tuần'),
+                    TextSpan(
+                      text: '  •  ',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                    TextSpan(text: '${plan.trainingDays.length} buổi/tuần'),
+                  ],
                 ),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
+
+        // Action buttons
+        OutlinedButton.icon(
+          onPressed: onStatistics,
+          icon: const Icon(Icons.bar_chart_rounded, size: 16),
+          label: const Text('Thống kê'),
+          style: OutlinedButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            textStyle: const TextStyle(fontSize: 12),
+            side: BorderSide(color: Colors.grey.shade300),
+            foregroundColor: Colors.grey.shade700,
+          ),
+        ),
+        const SizedBox(width: 8),
+        FilledButton(
+          onPressed: isSaving ? null : onSave,
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFF03613),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            visualDensity: VisualDensity.compact,
+            textStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          child: isSaving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Lưu'),
+        ),
       ],
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 2: Action Buttons
+// Active Routine Card (Compact horizontal layout)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ActionButtons extends StatelessWidget {
+class _ActiveRoutineCard extends StatelessWidget {
+  final RoutineModel? routine;
   final VoidCallback onRename;
   final VoidCallback onCopy;
 
-  const _ActionButtons({required this.onRename, required this.onCopy});
+  const _ActiveRoutineCard({
+    required this.routine,
+    required this.onRename,
+    required this.onCopy,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onRename,
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('Đổi tên'),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onCopy,
-            icon: const Icon(Icons.copy_rounded, size: 18),
-            label: const Text('Copy qua ngày'),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Left column: Info
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDECE8),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.calendar_today_rounded,
+                    color: Color(0xFFF03613),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        routine?.name ?? 'Buổi tập',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1C29),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${routine?.exercises.length ?? 0} động tác',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
+
+          // Right column: Actions
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _CompactActionButton(
+                icon: Icons.edit_outlined,
+                label: 'Đổi tên',
+                onTap: onRename,
+              ),
+              const SizedBox(height: 4),
+              _CompactActionButton(
+                icon: Icons.copy_rounded,
+                label: 'Copy',
+                onTap: onCopy,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _CompactActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: Colors.grey.shade700),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 3: Notes
+// Notes Section (Compact)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NotesSection extends StatelessWidget {
@@ -381,44 +507,31 @@ class _NotesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.info_outline_rounded, size: 18, color: AppColors.error),
-            const SizedBox(width: 6),
-            Text(
-              'Ghi chú buổi tập',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.error,
-              ),
-            ),
-          ],
+    return TextField(
+      maxLines: 2,
+      style: const TextStyle(fontSize: 13),
+      decoration: InputDecoration(
+        hintText: 'Thêm ghi chú khởi động...',
+        hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
         ),
-        const SizedBox(height: 8),
-        TextField(
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: 'Thêm các lưu ý khởi động...',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.3),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outline.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
-      ],
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFF03613)),
+        ),
+      ),
     );
   }
 }
@@ -707,104 +820,3 @@ class _PlanStructure extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Activate Plan Bar
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _ActivatePlanBar extends StatefulWidget {
-  final WorkoutPlanModel plan;
-
-  const _ActivatePlanBar({required this.plan});
-
-  @override
-  State<_ActivatePlanBar> createState() => _ActivatePlanBarState();
-}
-
-class _ActivatePlanBarState extends State<_ActivatePlanBar> {
-  bool _isActivating = false;
-
-  Future<void> _activate() async {
-    setState(() => _isActivating = true);
-    try {
-      await WorkoutRepository().setActivePlan(widget.plan.planId);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã áp dụng "${widget.plan.name}"'),
-          ),
-        );
-        // Pop back so the list/dashboard refreshes
-        context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-        setState(() => _isActivating = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isActive = widget.plan.isActive;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(
-          top: BorderSide(
-            color: Theme.of(context)
-                .colorScheme
-                .outlineVariant
-                .withValues(alpha: 0.3),
-          ),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: isActive
-              ? FilledButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.check_circle_rounded),
-                  label: const Text('Đang áp dụng'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    disabledBackgroundColor:
-                        AppColors.success.withValues(alpha: 0.3),
-                    disabledForegroundColor:
-                        AppColors.success,
-                  ),
-                )
-              : FilledButton.icon(
-                  onPressed: _isActivating ? null : _activate,
-                  icon: _isActivating
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.play_arrow_rounded),
-                  label: const Text('Áp dụng Giáo án này'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.deepOrange,
-                    foregroundColor: Colors.white,
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-}

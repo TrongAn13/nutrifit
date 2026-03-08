@@ -19,13 +19,11 @@ import '../../features/nutrition/presentation/screens/meal_detail_screen.dart';
 import '../../features/nutrition/presentation/screens/water_tracking_screen.dart';
 import '../../features/nutrition/presentation/screens/food_collection_screen.dart';
 import '../../features/nutrition/logic/water_cubit.dart';
-import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/workout/data/models/exercise_model.dart';
 import '../../features/workout/data/models/routine_model.dart';
 import '../../features/workout/data/models/workout_plan_model.dart';
 import '../../features/workout/data/repositories/workout_repository.dart';
 import '../../features/workout/logic/active_exercise_cubit.dart';
-import '../../features/workout/logic/create_plan_cubit.dart';
 import '../../features/workout/logic/exercise_library_bloc.dart';
 import '../../features/workout/logic/exercise_library_event.dart';
 import '../../features/workout/logic/plan_detail_cubit.dart';
@@ -34,7 +32,6 @@ import '../../features/workout/logic/workout_template_event.dart';
 import '../../features/workout/presentation/screens/active_exercise_detail_screen.dart';
 import '../../features/workout/presentation/screens/active_workout_screen.dart';
 import '../../features/workout/presentation/screens/create_plan_screen.dart';
-import '../../features/workout/presentation/screens/create_routine_screen.dart';
 import '../../features/workout/presentation/screens/exercise_library_screen.dart';
 import '../../features/workout/presentation/screens/plan_detail_screen.dart';
 import '../../features/workout/presentation/screens/routine_detail_screen.dart';
@@ -50,7 +47,6 @@ class AppRouter {
   static const String login = '/login';
   static const String register = '/register';
   static const String main = '/main';
-  static const String editProfile = '/edit-profile';
   static const String chat = '/chat';
   static const String foodLibrary = '/food-library';
   static const String mealDetail = '/meal-detail';
@@ -59,7 +55,6 @@ class AppRouter {
   static const String activeWorkout = '/active-workout';
   static const String exerciseLibrary = '/exercise-library';
   static const String createPlan = '/create-plan';
-  static const String createRoutine = '/create-routine';
   static const String workoutTemplates = '/workout-templates';
   static const String planDetail = '/plan-detail';
   static const String exerciseDetail = '/exercise-detail';
@@ -115,11 +110,6 @@ class AppRouter {
       path: main,
       name: 'main',
       builder: (context, state) => const MainNavigationScreen(),
-    ),
-    GoRoute(
-      path: editProfile,
-      name: 'editProfile',
-      builder: (context, state) => const EditProfileScreen(),
     ),
     GoRoute(
       path: chat,
@@ -232,26 +222,6 @@ class AppRouter {
       path: createPlan,
       name: 'createPlan',
       builder: (context, state) => const CreatePlanScreen(),
-    ),
-    GoRoute(
-      path: createRoutine,
-      name: 'createRoutine',
-      builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        final userId = FirebaseAuth.instance.currentUser!.uid;
-        return BlocProvider(
-          create: (_) => CreatePlanCubit(
-            workoutRepository: WorkoutRepository(),
-            userId: userId,
-          ),
-          child: CreateRoutineScreen(
-            planName: extra['name'] as String,
-            planDescription: extra['description'] as String,
-            totalWeeks: extra['totalWeeks'] as int,
-            trainingDays: (extra['trainingDays'] as List<dynamic>).cast<int>(),
-          ),
-        );
-      },
     ),
     GoRoute(
       path: workoutTemplates,

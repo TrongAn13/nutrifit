@@ -53,10 +53,10 @@ class QuickActionBottomSheet extends StatelessWidget {
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
-                ),
+                )
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 3),
 
             // ── Circular action grid ──
             Row(

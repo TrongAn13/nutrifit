@@ -15,7 +15,11 @@ class UserModel {
   final double? height; // cm
   final double? weight; // kg
   final String? activityLevel; // 'sedentary', 'light', 'moderate', 'active', 'very_active'
+  final String? workActivity; // 'sedentary', 'light', 'moderate', 'active'
+  final String? homeActivity; // 'sedentary', 'light', 'moderate', 'active'
   final String? goal; // 'lose_weight', 'maintain', 'gain_muscle'
+  final List<String>? allergies; // list of selected allergies
+  final String? otherAllergies; // custom allergies text
   final DateTime createdAt;
 
   const UserModel({
@@ -32,7 +36,11 @@ class UserModel {
     this.height,
     this.weight,
     this.activityLevel,
+    this.workActivity,
+    this.homeActivity,
     this.goal,
+    this.allergies,
+    this.otherAllergies,
     required this.createdAt,
   });
 
@@ -55,7 +63,11 @@ class UserModel {
       height: (json['height'] as num?)?.toDouble(),
       weight: (json['weight'] as num?)?.toDouble(),
       activityLevel: json['activityLevel'] as String?,
+      workActivity: json['workActivity'] as String?,
+      homeActivity: json['homeActivity'] as String?,
       goal: json['goal'] as String?,
+      allergies: (json['allergies'] as List<dynamic>?)?.cast<String>(),
+      otherAllergies: json['otherAllergies'] as String?,
       createdAt: (json['createdAt'] as Timestamp).toDate(),
     );
   }
@@ -75,7 +87,11 @@ class UserModel {
       'height': height,
       'weight': weight,
       'activityLevel': activityLevel,
+      'workActivity': workActivity,
+      'homeActivity': homeActivity,
       'goal': goal,
+      'allergies': allergies,
+      'otherAllergies': otherAllergies,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -96,7 +112,11 @@ class UserModel {
     double? height,
     double? weight,
     String? activityLevel,
+    String? workActivity,
+    String? homeActivity,
     String? goal,
+    List<String>? allergies,
+    String? otherAllergies,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -113,7 +133,11 @@ class UserModel {
       height: height ?? this.height,
       weight: weight ?? this.weight,
       activityLevel: activityLevel ?? this.activityLevel,
+      workActivity: workActivity ?? this.workActivity,
+      homeActivity: homeActivity ?? this.homeActivity,
       goal: goal ?? this.goal,
+      allergies: allergies ?? this.allergies,
+      otherAllergies: otherAllergies ?? this.otherAllergies,
       createdAt: createdAt ?? this.createdAt,
     );
   }

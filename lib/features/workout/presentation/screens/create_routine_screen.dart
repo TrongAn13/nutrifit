@@ -107,34 +107,20 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Cấu trúc giáo án'),
-        actions: [
-          BlocBuilder<CreatePlanCubit, CreatePlanState>(
-            builder: (context, state) {
-              return FilledButton(
-                onPressed: state.isSaving ? null : _savePlan,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.deepOrange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  visualDensity: VisualDensity.compact,
-                ),
-                child: state.isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Lưu'),
-              );
-            },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Cấu trúc giáo án',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
           ),
-          const SizedBox(width: 12),
-        ],
+        ),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: BlocConsumer<CreatePlanCubit, CreatePlanState>(
         listener: (context, state) {
@@ -165,8 +151,8 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
 
           return Column(
             children: [
-              // ── Day Tabs ──
-              _DayTabBar(
+              // ── Day Selector (White container, bottom radius) ──
+              _DaySelector(
                 trainingDays: widget.trainingDays,
                 selectedIndex: _selectedDayIndex,
                 routines: state.routines,
@@ -175,103 +161,42 @@ class _CreateRoutineScreenState extends State<CreateRoutineScreen> {
 
               // ── Body ──
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  children: [
-                    // Routine name field
-                    TextField(
-                      controller: nameCtrl,
-                      onChanged: (v) => context
-                          .read<CreatePlanCubit>()
-                          .updateRoutineName(_selectedDayIndex, v),
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                child: routine.exercises.isEmpty
+                    ? _EmptyExerciseState(
+                        nameCtrl: nameCtrl,
+                        dayIndex: _selectedDayIndex,
+                        onAddExercise: _addExercise,
+                      )
+                    : _ExerciseListBody(
+                        routine: routine,
+                        nameCtrl: nameCtrl,
+                        dayIndex: _selectedDayIndex,
+                        onAddExercise: _addExercise,
                       ),
-                      decoration: InputDecoration(
-                        hintText: 'Tên buổi tập (VD: Ngực - Tay sau)',
-                        hintStyle: theme.textTheme.titleLarge?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.3),
-                          fontWeight: FontWeight.bold,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                    Text(
-                      '${routine.exercises.length} bài tập',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.5),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Notes button
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Tính năng ghi chú đang phát triển'),
-                            ),
-                          );
-                        },
-                        icon: Icon(
-                          Icons.note_add_outlined,
-                          size: 18,
-                          color: Colors.deepOrange.shade400,
-                        ),
-                        label: Text(
-                          'Thêm ghi chú buổi tập',
-                          style: TextStyle(color: Colors.deepOrange.shade400),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Exercise list (ReorderableListView)
-                    if (routine.exercises.isNotEmpty) ...[
-                      _ExerciseReorderableList(
-                        exercises: routine.exercises,
-                        routineIndex: _selectedDayIndex,
-                        theme: theme,
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Add exercise button
-                    _AddExerciseButton(onPressed: _addExercise),
-                  ],
-                ),
               ),
             ],
           );
         },
+      ),
+      // ── Bottom Sticky Save Button ──
+      bottomNavigationBar: _SaveBottomBar(
+        onSave: _savePlan,
       ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Day Tab Bar
+// Day Selector — White container with bottom radius
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class _DayTabBar extends StatelessWidget {
+class _DaySelector extends StatelessWidget {
   final List<int> trainingDays;
   final int selectedIndex;
   final List<RoutineModel> routines;
   final ValueChanged<int> onSelected;
 
-  const _DayTabBar({
+  const _DaySelector({
     required this.trainingDays,
     required this.selectedIndex,
     required this.routines,
@@ -284,13 +209,20 @@ class _DayTabBar extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-          ),
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -298,48 +230,63 @@ class _DayTabBar extends StatelessWidget {
           children: List.generate(trainingDays.length, (i) {
             final isSelected = i == selectedIndex;
             final dayLabel = _dayLabels[trainingDays[i]] ?? '?';
-            final exerciseCount = i < routines.length
-                ? routines[i].exercises.length
-                : 0;
+            final exerciseCount =
+                i < routines.length ? routines[i].exercises.length : 0;
 
             return Padding(
-              padding: EdgeInsets.only(right: i < trainingDays.length - 1 ? 8 : 0),
+              padding: EdgeInsets.only(
+                right: i < trainingDays.length - 1 ? 8 : 0,
+              ),
               child: GestureDetector(
                 onTap: () => onSelected(i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
+                    horizontal: 20,
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.deepOrange
-                        : theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                        : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(50),
                   ),
-                  child: Column(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         dayLabel,
                         style: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                           color: isSelected
                               ? Colors.white
-                              : theme.colorScheme.onSurface,
+                              : Colors.grey[600],
                         ),
                       ),
                       if (exerciseCount > 0) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          '$exerciseCount bài',
-                          style: theme.textTheme.labelSmall?.copyWith(
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
                             color: isSelected
-                                ? Colors.white70
-                                : theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
+                                ? Colors.white.withValues(alpha: 0.25)
+                                : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$exerciseCount',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.grey[700],
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                       ],
@@ -356,23 +303,158 @@ class _DayTabBar extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Empty State — No exercises for the selected day
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _EmptyExerciseState extends StatelessWidget {
+  final TextEditingController nameCtrl;
+  final int dayIndex;
+  final VoidCallback onAddExercise;
+
+  const _EmptyExerciseState({
+    required this.nameCtrl,
+    required this.dayIndex,
+    required this.onAddExercise,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        children: [
+          // Routine name field
+          _RoutineNameField(controller: nameCtrl, dayIndex: dayIndex),
+          const SizedBox(height: 64),
+
+          // Empty state illustration
+          Icon(
+            Icons.fitness_center_rounded,
+            size: 64,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Chưa có bài tập nào cho ngày này.',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+
+          // Add exercise button
+          _AddExerciseButton(onPressed: onAddExercise),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Exercise List Body — Has exercises
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ExerciseListBody extends StatelessWidget {
+  final RoutineModel routine;
+  final TextEditingController nameCtrl;
+  final int dayIndex;
+  final VoidCallback onAddExercise;
+
+  const _ExerciseListBody({
+    required this.routine,
+    required this.nameCtrl,
+    required this.dayIndex,
+    required this.onAddExercise,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      children: [
+        // Routine name field
+        _RoutineNameField(controller: nameCtrl, dayIndex: dayIndex),
+        Text(
+          '${routine.exercises.length} bài tập',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.grey[500],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Exercise cards (Reorderable)
+        _ExerciseReorderableList(
+          exercises: routine.exercises,
+          routineIndex: dayIndex,
+        ),
+        const SizedBox(height: 16),
+
+        // Add exercise button
+        _AddExerciseButton(onPressed: onAddExercise),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Routine Name Field
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _RoutineNameField extends StatelessWidget {
+  final TextEditingController controller;
+  final int dayIndex;
+
+  const _RoutineNameField({
+    required this.controller,
+    required this.dayIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return TextField(
+      controller: controller,
+      onChanged: (v) => context
+          .read<CreatePlanCubit>()
+          .updateRoutineName(dayIndex, v),
+      style: theme.textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+      ),
+      decoration: InputDecoration(
+        hintText: 'Tên buổi tập (VD: Ngực - Tay sau)',
+        hintStyle: theme.textTheme.titleLarge?.copyWith(
+          color: Colors.grey[350],
+          fontWeight: FontWeight.bold,
+        ),
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.zero,
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Exercise Reorderable List
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _ExerciseReorderableList extends StatelessWidget {
   final List<ExerciseEntry> exercises;
   final int routineIndex;
-  final ThemeData theme;
 
   const _ExerciseReorderableList({
     required this.exercises,
     required this.routineIndex,
-    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = theme.colorScheme;
+    final theme = Theme.of(context);
 
     return ReorderableListView.builder(
       shrinkWrap: true,
@@ -390,8 +472,9 @@ class _ExerciseReorderableList extends StatelessWidget {
         return AnimatedBuilder(
           animation: animation,
           builder: (ctx, child) => Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(14),
+            elevation: 6,
+            borderRadius: BorderRadius.circular(16),
+            shadowColor: Colors.black26,
             child: child,
           ),
           child: child,
@@ -400,18 +483,23 @@ class _ExerciseReorderableList extends StatelessWidget {
       itemBuilder: (context, index) {
         final ex = exercises[index];
 
-        return Card(
+        return Container(
           key: ValueKey('$routineIndex-$index-${ex.exerciseName}'),
-          margin: const EdgeInsets.only(bottom: 8),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-            ),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
             child: Row(
               children: [
                 // Drag handle
@@ -421,7 +509,7 @@ class _ExerciseReorderableList extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Icon(
                       Icons.drag_indicator_rounded,
-                      color: colorScheme.outline.withValues(alpha: 0.4),
+                      color: Colors.grey[350],
                       size: 22,
                     ),
                   ),
@@ -429,21 +517,21 @@ class _ExerciseReorderableList extends StatelessWidget {
 
                 // Exercise icon placeholder
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.deepOrange.withValues(alpha: 0.08),
+                    color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.fitness_center_rounded,
-                    color: Colors.deepOrange,
-                    size: 20,
+                    color: Colors.grey[400],
+                    size: 22,
                   ),
                 ),
                 const SizedBox(width: 12),
 
-                // Exercise name + muscle
+                // Exercise name + subtitle
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,20 +540,20 @@ class _ExerciseReorderableList extends StatelessWidget {
                         ex.exerciseName,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (ex.primaryMuscle.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          ex.primaryMuscle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface
-                                .withValues(alpha: 0.5),
-                          ),
+                      const SizedBox(height: 3),
+                      Text(
+                        ex.primaryMuscle.isNotEmpty
+                            ? '${ex.sets} hiệp × ${ex.reps} lần • ${ex.primaryMuscle}'
+                            : '${ex.sets} hiệp × ${ex.reps} lần',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[500],
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
@@ -476,9 +564,9 @@ class _ExerciseReorderableList extends StatelessWidget {
                       .read<CreatePlanCubit>()
                       .removeExercise(routineIndex, index),
                   icon: Icon(
-                    Icons.close_rounded,
+                    Icons.delete_outline_rounded,
                     size: 20,
-                    color: colorScheme.outline.withValues(alpha: 0.5),
+                    color: Colors.red[300],
                   ),
                   tooltip: 'Xóa bài tập',
                   visualDensity: VisualDensity.compact,
@@ -493,7 +581,7 @@ class _ExerciseReorderableList extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Add Exercise Button
+// Add Exercise Button — Outlined / dashed style
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _AddExerciseButton extends StatelessWidget {
@@ -505,23 +593,92 @@ class _AddExerciseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 54,
       child: OutlinedButton.icon(
         onPressed: onPressed,
-        icon: const Icon(Icons.add_rounded, size: 22, color: Colors.deepOrange),
-        label: const Text(
+        icon: Icon(
+          Icons.add_rounded,
+          size: 22,
+          color: Colors.deepOrange[400],
+        ),
+        label: Text(
           'Thêm bài tập',
           style: TextStyle(
-            color: Colors.deepOrange,
+            color: Colors.deepOrange[400],
             fontWeight: FontWeight.w600,
+            fontSize: 15,
           ),
         ),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.deepOrange, width: 1.2),
-          backgroundColor: Colors.deepOrange.withValues(alpha: 0.04),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: Colors.deepOrange.withValues(alpha: 0.3),
+            width: 1.5,
           ),
+          backgroundColor: Colors.deepOrange.withValues(alpha: 0.03),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bottom Sticky Save Bar
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _SaveBottomBar extends StatelessWidget {
+  final VoidCallback onSave;
+
+  const _SaveBottomBar({required this.onSave});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: Colors.grey.shade200,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: BlocBuilder<CreatePlanCubit, CreatePlanState>(
+          builder: (context, state) {
+            return SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: FilledButton(
+                onPressed: state.isSaving ? null : onSave,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.deepOrange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                child: state.isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('LƯU VÀ ÁP DỤNG'),
+              ),
+            );
+          },
         ),
       ),
     );

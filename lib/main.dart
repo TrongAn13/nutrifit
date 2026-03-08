@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/routes/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_cubit.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/logic/auth_bloc.dart';
 import 'features/auth/logic/auth_event.dart';
@@ -87,18 +88,25 @@ class _NutrifitAppState extends State<NutrifitApp> {
           BlocProvider(
             create: (_) => ActiveWorkoutCubit(),
           ),
+          BlocProvider(
+            create: (_) => ThemeCubit(),
+          ),
         ],
-        child: MaterialApp.router(
-          title: 'Nutrifit',
-          debugShowCheckedModeBanner: false,
+        child: BlocBuilder<ThemeCubit, ThemeMode>(
+          builder: (context, themeMode) {
+            return MaterialApp.router(
+              title: 'Nutrifit',
+              debugShowCheckedModeBanner: false,
 
-          // ── Theme ──
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
+              // ── Theme ──
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeMode,
 
-          // ── Router ──
-          routerConfig: _router,
+              // ── Router ──
+              routerConfig: _router,
+            );
+          },
         ),
       ),
     );

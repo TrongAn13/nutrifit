@@ -50,7 +50,12 @@ class MainNavigationScreen extends StatelessWidget {
         ],
         child: const NutritionDashboard(),
       ),
-      const PlanSelectionScreen(),
+      BlocProvider(
+        create: (context) =>
+            WorkoutBloc(workoutRepository: WorkoutRepository())
+              ..add(const WorkoutLoadRequested()),
+        child: const PlanSelectionScreen(),
+      ),
       const SettingsScreen(),
     ];
   }
@@ -156,7 +161,7 @@ class _NavigationShellState extends State<_NavigationShell> {
                           width: 44,
                           height: 44,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF4CAF50),
+                            color: Colors.redAccent,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(

@@ -5,6 +5,9 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/workout_plan_model.dart';
+import '../../data/repositories/workout_repository.dart';
+import '../../logic/workout_bloc.dart';
+import '../../logic/workout_event.dart';
 import '../../logic/workout_template_bloc.dart';
 import '../../logic/workout_template_event.dart';
 import '../../logic/workout_template_state.dart';
@@ -169,6 +172,41 @@ class _WorkoutTemplateListScreenState extends State<WorkoutTemplateListScreen> {
                           ),
                         );
                       },
+                      onApply: () async {
+                        final plan = filtered[index];
+                        if (plan.isActive) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Giáo án này đang được áp dụng rồi'),
+                            ),
+                          );
+                          return;
+                        }
+                        try {
+                          await WorkoutRepository().setActivePlan(plan.planId);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Đã áp dụng "${plan.name}"'),
+                              ),
+                            );
+                            // Reload the list to update badges
+                            context.read<WorkoutTemplateBloc>().add(
+                              const WorkoutTemplateLoadRequested(),
+                            );
+                            // Also refresh WorkoutDashboard data
+                            context.read<WorkoutBloc>().add(
+                              const WorkoutLoadRequested(),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Lỗi: $e')),
+                            );
+                          }
+                        }
+                      },
                     ),
                   ),
                 );
@@ -188,8 +226,13 @@ class _WorkoutTemplateListScreenState extends State<WorkoutTemplateListScreen> {
 class _PlanCard extends StatelessWidget {
   final WorkoutPlanModel plan;
   final VoidCallback onDelete;
+  final VoidCallback onApply;
 
-  const _PlanCard({required this.plan, required this.onDelete});
+  const _PlanCard({
+    required this.plan,
+    required this.onDelete,
+    required this.onApply,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -233,11 +276,39 @@ class _PlanCard extends StatelessWidget {
                       size: 20,
                     ),
                     onSelected: (value) {
-                      if (value == 'delete') {
+                      if (value == 'apply') {
+                        onApply();
+                      } else if (value == 'delete') {
                         _confirmDelete(context);
                       }
                     },
                     itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'apply',
+                        enabled: !plan.isActive,
+                        child: Row(
+                          children: [
+                            Icon(
+                              plan.isActive
+                                  ? Icons.check_circle_rounded
+                                  : Icons.play_circle_outline_rounded,
+                              size: 18,
+                              color: plan.isActive
+                                  ? AppColors.success
+                                  : Colors.deepOrange,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              plan.isActive ? 'Đang áp dụng' : 'Áp dụng',
+                              style: TextStyle(
+                                color: plan.isActive
+                                    ? AppColors.success
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       const PopupMenuItem(
                         value: 'delete',
                         child: Row(
@@ -259,19 +330,19 @@ class _PlanCard extends StatelessWidget {
               const SizedBox(height: 10),
 
               // ── Row 2: Badges ──
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   _Badge(
                     icon: Icons.calendar_month_outlined,
                     label: '${plan.totalWeeks} tuần',
                   ),
-                  const SizedBox(width: 8),
                   _Badge(
                     icon: Icons.fitness_center_rounded,
                     label: '${plan.trainingDays.length} buổi/tuần',
                   ),
-                  if (plan.isActive) ...[
-                    const SizedBox(width: 8),
+                  if (plan.isActive)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -289,7 +360,6 @@ class _PlanCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ],
                 ],
               ),
 

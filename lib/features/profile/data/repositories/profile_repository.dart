@@ -39,6 +39,7 @@ class ProfileRepository {
   // ───────────────────────── Write ─────────────────────────
 
   /// Updates profile fields using merge to preserve existing data.
+  /// Only non-null fields will be updated.
   Future<void> updateProfile({
     required String name,
     String? phone,
@@ -48,20 +49,25 @@ class ProfileRepository {
     double? height,
     double? weight,
     String? activityLevel,
+    String? workActivity,
+    String? homeActivity,
     String? goal,
   }) async {
     try {
       final data = <String, dynamic>{
         'name': name,
-        'phone': phone,
-        'gender': gender,
-        'city': city,
-        'height': height,
-        'weight': weight,
-        'activityLevel': activityLevel,
-        'goal': goal,
       };
 
+      // Only add fields that are not null to avoid overwriting existing data
+      if (phone != null) data['phone'] = phone;
+      if (gender != null) data['gender'] = gender;
+      if (city != null) data['city'] = city;
+      if (height != null) data['height'] = height;
+      if (weight != null) data['weight'] = weight;
+      if (activityLevel != null) data['activityLevel'] = activityLevel;
+      if (workActivity != null) data['workActivity'] = workActivity;
+      if (homeActivity != null) data['homeActivity'] = homeActivity;
+      if (goal != null) data['goal'] = goal;
       if (birthDate != null) {
         data['birthDate'] = Timestamp.fromDate(birthDate);
       }
@@ -72,6 +78,19 @@ class ProfileRepository {
       await _auth.currentUser?.updateDisplayName(name);
     } catch (e) {
       throw Exception('Không thể cập nhật hồ sơ: ${e.toString()}');
+    }
+  }
+
+  /// Updates allergies list and other allergies text.
+  Future<void> updateAllergies(
+      List<String> allergies, String otherAllergies) async {
+    try {
+      await _usersRef.doc(_uid).set({
+        'allergies': allergies,
+        'otherAllergies': otherAllergies,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      throw Exception('Không thể cập nhật dị ứng: ${e.toString()}');
     }
   }
 }

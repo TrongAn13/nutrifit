@@ -73,15 +73,20 @@ class _WorkoutGridCalendarState extends State<WorkoutGridCalendar> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: TableCalendar<dynamic>(
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
           focusedDay: _focusedDay,
-          rowHeight: 75,
+          rowHeight: 45,
+          daysOfWeekHeight: 20,
           selectedDayPredicate: (day) =>
               _selectedDay != null && isSameDay(_selectedDay, day),
           onDaySelected: (selectedDay, focusedDay) {
@@ -146,6 +151,9 @@ class _WorkoutGridCalendarState extends State<WorkoutGridCalendar> {
           calendarStyle: CalendarStyle(
             // Hide default markers — we use custom markerBuilder
             markersMaxCount: 0,
+
+            // Compressed cell margins
+            cellMargin: const EdgeInsets.all(2.0),
 
             // Today: just primary-colored bold text, no circle fill
             todayDecoration: const BoxDecoration(
@@ -234,35 +242,26 @@ class _WorkoutGridCalendarState extends State<WorkoutGridCalendar> {
       margin: const EdgeInsets.all(2.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             '${day.day}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
-          const SizedBox(height: 2),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
             decoration: BoxDecoration(
               color: AppColors.accent,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '${history.completionPercentage.round()}%',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            history.routineName,
-            style: TextStyle(fontSize: 8, color: Colors.grey.shade600),
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

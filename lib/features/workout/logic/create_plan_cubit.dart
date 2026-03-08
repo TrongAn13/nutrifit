@@ -149,7 +149,7 @@ class CreatePlanCubit extends Cubit<CreatePlanState> {
         description: description,
         totalWeeks: totalWeeks,
         trainingDays: trainingDays,
-        isActive: true,
+        isActive: false,
         routines: state.routines,
         createdAt: DateTime.now(),
       );

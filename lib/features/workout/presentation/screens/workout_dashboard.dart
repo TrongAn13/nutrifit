@@ -251,6 +251,7 @@ class _ActiveDashboard extends StatefulWidget {
 
 class _ActiveDashboardState extends State<_ActiveDashboard> {
   late WorkoutPlanModel _selectedPlan;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -259,6 +260,12 @@ class _ActiveDashboardState extends State<_ActiveDashboard> {
     _selectedPlan = widget.activePlans.isNotEmpty
         ? widget.activePlans.first
         : widget.allPlans.first;
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -362,90 +369,151 @@ class _ActiveDashboardState extends State<_ActiveDashboard> {
       onRefresh: () async {
         context.read<WorkoutBloc>().add(const WorkoutLoadRequested());
       },
-      child: SingleChildScrollView(
+      child: CustomScrollView(
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header ──
-            _GreetingHeader(
-              userName: userName,
-              onCreatePlan: () => context.push('/create-plan'),
-            ),
-            const SizedBox(height: 20),
+        slivers: [
+          // ── Custom Top Bar (Bodify style) ──
+          SliverToBoxAdapter(
+            child: _BodifyTopBar(),
+          ),
 
-            // ── Plan Selector ──
-            _PlanSelectorCard(
-              selectedPlan: _selectedPlan,
-              totalPlans: widget.allPlans.length,
-              onTap: _showPlanSelector,
-              theme: theme,
-              colorScheme: colorScheme,
-            ),
-            const SizedBox(height: 24),
+          // ── Main Content ──
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // ── Greeting Section ──
+                const SizedBox(height: 24),
+                _GreetingSection(userName: userName),
+                const SizedBox(height: 20),
 
-            // ── Today's Workout Card ──
-            _TodayWorkoutCard(
-              plan: _selectedPlan,
-              histories: widget.histories,
-            ),
-            const SizedBox(height: 24),
+                // ── Action Row (Plan Selector + Create New) ──
+                _ActionRow(
+                  selectedPlan: _selectedPlan,
+                  onSelectPlan: _showPlanSelector,
+                  onCreatePlan: () => context.push('/create-plan'),
+                ),
+                const SizedBox(height: 24),
 
-            // ── Grid Calendar ──
-            WorkoutGridCalendar(
-              plan: _selectedPlan,
-              histories: widget.histories,
+                // ── Today's Workout Card ──
+                _TodayWorkoutCard(
+                  plan: _selectedPlan,
+                  histories: widget.histories,
+                ),
+                const SizedBox(height: 24),
+
+                // ── Grid Calendar ──
+                WorkoutGridCalendar(
+                  plan: _selectedPlan,
+                  histories: widget.histories,
+                ),
+                const SizedBox(height: 24),
+              ]),
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Greeting Header
+// Bodify Custom Top Bar
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _GreetingHeader extends StatelessWidget {
-  final String userName;
-  final VoidCallback onCreatePlan;
-
-  const _GreetingHeader({required this.userName, required this.onCreatePlan});
+class _BodifyTopBar extends StatelessWidget {
+  const _BodifyTopBar();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // App Logo
+          const Text(
+            'NUTRIFIT',
+            style: TextStyle(
+              color: Colors.redAccent,
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+              letterSpacing: 1.2,
+            ),
+          ),
+          // Icon buttons
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Xin chào, $userName 👋',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              IconButton(
+                onPressed: () {
+                  // TODO: Navigate to chat/messages
+                },
+                icon: Icon(
+                  Icons.chat_bubble_outline,
+                  color: Colors.grey.shade700,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Sẵn sàng tập luyện!',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+              IconButton(
+                onPressed: () {
+                  // TODO: Navigate to notifications
+                },
+                icon: Icon(
+                  Icons.notifications_none,
+                  color: Colors.grey.shade700,
                 ),
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Greeting Section (Bodify style)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GreetingSection extends StatelessWidget {
+  final String userName;
+
+  const _GreetingSection({required this.userName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Xin chào, $userName!',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF1A1C29),
+          ),
         ),
-        FilledButton.tonalIcon(
-          onPressed: onCreatePlan,
-          icon: const Icon(Icons.add_rounded, size: 20),
-          label: const Text('Tạo mới'),
+        const SizedBox(height: 3),
+        Text(
+          'Hãy cùng nhau tập luyện nào.',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+          ),
         ),
       ],
     );
@@ -453,98 +521,83 @@ class _GreetingHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Plan Selector Card
+// Action Row (Plan Selector + Create New button)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _PlanSelectorCard extends StatelessWidget {
+class _ActionRow extends StatelessWidget {
   final WorkoutPlanModel selectedPlan;
-  final int totalPlans;
-  final VoidCallback onTap;
-  final ThemeData theme;
-  final ColorScheme colorScheme;
+  final VoidCallback onSelectPlan;
+  final VoidCallback onCreatePlan;
 
-  const _PlanSelectorCard({
+  const _ActionRow({
     required this.selectedPlan,
-    required this.totalPlans,
-    required this.onTap,
-    required this.theme,
-    required this.colorScheme,
+    required this.onSelectPlan,
+    required this.onCreatePlan,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: colorScheme.primaryContainer,
-                child: Icon(
-                  Icons.menu_book_rounded,
-                  color: colorScheme.onPrimaryContainer,
-                  size: 22,
-                ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Plan Selector (left side)
+        Expanded(
+          child: GestureDetector(
+            onTap: onSelectPlan,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDECE8),
+                borderRadius: BorderRadius.circular(24),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      selectedPlan.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Chương trình tập: ${selectedPlan.name}',
+                      style: const TextStyle(
+                        color: Colors.redAccent,
                         fontWeight: FontWeight.bold,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${selectedPlan.totalWeeks} tuần · ${selectedPlan.routines.length} buổi'
-                      '${selectedPlan.isActive ? '' : ' · Ngưng'}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.5,
                   ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$totalPlans',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.expand_more_rounded,
-                      size: 18,
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ],
-                ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.redAccent,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
+        const SizedBox(width: 12),
+        // Create New button (right side)
+        GestureDetector(
+          onTap: onCreatePlan,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF03613),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const Text(
+              '+ Tạo mới',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Today's Workout Card
@@ -590,8 +643,13 @@ class _TodayWorkoutCard extends StatelessWidget {
         ? todayHistory.first.completionPercentage.round()
         : 0;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
+    // Light styled card (Bodify style - no heavy shadow)
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: InkWell(
         onTap: isCompletedToday
             ? null
@@ -599,108 +657,100 @@ class _TodayWorkoutCard extends StatelessWidget {
                 context.read<ActiveWorkoutCubit>().loadRoutine(routine);
                 context.push('/active-workout');
               },
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Card header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isCompletedToday
-                            ? Colors.teal.withValues(alpha: 0.15)
-                            : AppColors.success.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isCompletedToday) ...[
-                            const Icon(
-                              Icons.check_circle,
-                              size: 16,
-                              color: Colors.teal,
-                            ),
-                            const SizedBox(width: 4),
-                          ],
-                          Text(
-                            isCompletedToday
-                                ? 'Đã hoàn thành'
-                                : 'Buổi tập hôm nay',
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: isCompletedToday
-                                  ? Colors.teal
-                                  : AppColors.success,
-                              fontWeight: FontWeight.w600,
-                            ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isCompletedToday
+                          ? Colors.teal.withValues(alpha: 0.15)
+                          : AppColors.success.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isCompletedToday) ...[
+                          const Icon(
+                            Icons.check_circle,
+                            size: 16,
+                            color: Colors.teal,
                           ),
+                          const SizedBox(width: 4),
                         ],
-                      ),
+                        Text(
+                          isCompletedToday
+                              ? 'Đã hoàn thành'
+                              : 'Buổi tập hôm nay',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: isCompletedToday
+                                ? Colors.teal
+                                : AppColors.success,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    Text(
-                      '${routine.exercises.length} bài tập',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${routine.exercises.length} bài tập',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
 
               // Routine name
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  routine.name,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                routine.name,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
               // Completion percentage (only when completed)
               if (isCompletedToday) ...[
                 const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.teal.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.emoji_events_rounded,
-                          color: Colors.teal,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Bạn đã hoàn thành $completionPct% bài tập',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.teal.shade700,
-                              fontWeight: FontWeight.w600,
-                            ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.emoji_events_rounded,
+                        color: Colors.teal,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Bạn đã hoàn thành $completionPct% bài tập',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.teal.shade700,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -723,22 +773,17 @@ class _RestDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Icon(
-              Icons.self_improvement_rounded,
-              size: 48,
-              color: colorScheme.tertiary.withValues(alpha: 0.6),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               'Ngày nghỉ ngơi 🧘',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               'Hôm nay không có buổi tập nào.\nHãy nghỉ ngơi và phục hồi!',
               textAlign: TextAlign.center,

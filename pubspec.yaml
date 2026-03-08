@@ -58,6 +58,7 @@ dependencies:
   table_calendar: ^3.2.0
   percent_indicator: ^4.2.5
   intl: ^0.20.2
+  vertical_weight_slider: ^2.6.0
 
 dev_dependencies:
   flutter_test:
