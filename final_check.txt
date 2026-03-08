@@ -1,0 +1,3 @@
+WARNING|STATIC_WARNING|UNUSED_IMPORT|D:\\AndroidStudioPJ\\nutrifit\\lib\\core\\routes\\app_router.dart|28|8|56|Unused import: '../../features/workout/logic/active_workout_cubit.dart'.
+WARNING|STATIC_WARNING|UNUSED_IMPORT|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\active_workout_screen.dart|5|8|34|Unused import: 'package:go_router/go_router.dart'.
+INFO|LINT|CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\widgets\\workout_grid_calendar.dart|211|17|12|Statements in an if should be enclosed in a block.
