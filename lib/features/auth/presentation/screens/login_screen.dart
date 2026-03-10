@@ -8,7 +8,7 @@ import '../../logic/auth_bloc.dart';
 import '../../logic/auth_event.dart';
 import '../../logic/auth_state.dart';
 
-/// Login screen with email & password fields.
+/// Minimalist login screen with white background and deepOrange accent.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -21,6 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
+
+  static const _accentColor = Colors.deepOrange;
 
   @override
   void dispose() {
@@ -42,7 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
@@ -58,47 +59,54 @@ class _LoginScreenState extends State<LoginScreen> {
             );
         }
         if (state is AuthAuthenticated) {
-          context.go(AppRouter.main);
+          // Role-based routing after login
+          if (state.user.role == 'coach') {
+            context.go(AppRouter.coachMain);
+          } else {
+            context.go(AppRouter.main);
+          }
         }
       },
       child: Scaffold(
+        backgroundColor: Colors.white,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ── Logo ──
-                    _buildLogo(colorScheme),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 48),
 
-                    // ── Title ──
+                    // ── Header ──
                     Text(
                       'Chào mừng trở lại!',
-                      style: theme.textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Đăng nhập để tiếp tục',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade900,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Đăng nhập vào NutriFit để tiếp tục',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey.shade500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 40),
 
-                    // ── Email ──
-                    TextFormField(
+                    // ── Email Field ──
+                    _buildStyledField(
                       controller: _emailCtrl,
+                      hintText: 'Email',
+                      prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
                           return 'Vui lòng nhập email';
@@ -107,26 +115,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
-                    // ── Password ──
-                    TextFormField(
+                    // ── Password Field ──
+                    _buildStyledField(
                       controller: _passwordCtrl,
+                      hintText: 'Mật khẩu',
+                      prefixIcon: Icons.lock_outline,
                       obscureText: _obscurePassword,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        labelText: 'Mật khẩu',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                          ),
-                          onPressed: () =>
-                              setState(() => _obscurePassword = !_obscurePassword),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.grey.shade400,
+                          size: 20,
                         ),
+                        onPressed: () =>
+                            setState(() => _obscurePassword = !_obscurePassword),
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) {
@@ -136,17 +144,29 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
 
-                    // ── Submit Button ──
+                    // ── Login Button ──
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
                         final isLoading = state is AuthLoading;
                         return SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
+                          height: 54,
+                          child: FilledButton(
                             onPressed: isLoading ? null : _submit,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _accentColor,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor:
+                                  _accentColor.withValues(alpha: 0.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             child: isLoading
                                 ? const SizedBox(
                                     width: 24,
@@ -161,7 +181,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
+
+                    // ── Forgot Password ──
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          // TODO: Implement forgot password
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey.shade600,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Quên mật khẩu?',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
 
                     // ── Register Link ──
                     Row(
@@ -169,20 +207,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           'Chưa có tài khoản? ',
-                          style: theme.textTheme.bodyMedium,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () => context.go(AppRouter.register),
                           child: Text(
-                            'Đăng ký ngay',
+                            'Tạo tài khoản mới',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
+                              color: _accentColor,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -193,19 +234,59 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// App logo widget.
-  Widget _buildLogo(ColorScheme colorScheme) {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Styled TextField
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Builds a text field with grey background, rounded border and prefix icon.
+  Widget _buildStyledField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData prefixIcon,
+    bool obscureText = false,
+    TextInputType? keyboardType,
+    TextInputAction? textInputAction,
+    Widget? suffixIcon,
+    String? Function(String?)? validator,
+    void Function(String)? onFieldSubmitted,
+  }) {
     return Container(
-      width: 80,
-      height: 80,
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Icon(
-        Icons.fitness_center_rounded,
-        size: 40,
-        color: colorScheme.primary,
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        onFieldSubmitted: onFieldSubmitted,
+        validator: validator,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: Colors.grey.shade800,
+        ),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontWeight: FontWeight.normal,
+          ),
+          prefixIcon: Icon(
+            prefixIcon,
+            color: Colors.grey.shade500,
+            size: 22,
+          ),
+          suffixIcon: suffixIcon,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
+          errorStyle: const TextStyle(fontSize: 12),
+        ),
       ),
     );
   }

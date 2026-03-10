@@ -20,6 +20,8 @@ class UserModel {
   final String? goal; // 'lose_weight', 'maintain', 'gain_muscle'
   final List<String>? allergies; // list of selected allergies
   final String? otherAllergies; // custom allergies text
+  final String? coachId; // ID of linked coach (for users)
+  final List<String>? clientIds; // IDs of managed clients (for coaches)
   final DateTime createdAt;
 
   const UserModel({
@@ -41,6 +43,8 @@ class UserModel {
     this.goal,
     this.allergies,
     this.otherAllergies,
+    this.coachId,
+    this.clientIds,
     required this.createdAt,
   });
 
@@ -68,6 +72,8 @@ class UserModel {
       goal: json['goal'] as String?,
       allergies: (json['allergies'] as List<dynamic>?)?.cast<String>(),
       otherAllergies: json['otherAllergies'] as String?,
+      coachId: json['coachId'] as String?,
+      clientIds: (json['clientIds'] as List<dynamic>?)?.cast<String>(),
       createdAt: (json['createdAt'] as Timestamp).toDate(),
     );
   }
@@ -92,6 +98,8 @@ class UserModel {
       'goal': goal,
       'allergies': allergies,
       'otherAllergies': otherAllergies,
+      'coachId': coachId,
+      'clientIds': clientIds,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -117,6 +125,8 @@ class UserModel {
     String? goal,
     List<String>? allergies,
     String? otherAllergies,
+    String? coachId,
+    List<String>? clientIds,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -138,6 +148,8 @@ class UserModel {
       goal: goal ?? this.goal,
       allergies: allergies ?? this.allergies,
       otherAllergies: otherAllergies ?? this.otherAllergies,
+      coachId: coachId ?? this.coachId,
+      clientIds: clientIds ?? this.clientIds,
       createdAt: createdAt ?? this.createdAt,
     );
   }

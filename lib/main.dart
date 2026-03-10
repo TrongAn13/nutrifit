@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/routes/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -12,7 +13,7 @@ import 'core/theme/theme_cubit.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/logic/auth_bloc.dart';
 import 'features/auth/logic/auth_event.dart';
-import 'features/workout/logic/active_workout_cubit.dart';
+import 'features/user/workout/logic/active_workout_cubit.dart';
 import 'firebase_options.dart';
 
 /// Application entry point.
@@ -24,6 +25,9 @@ import 'firebase_options.dart';
 /// 4. Launch the root widget with AuthBloc.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ── Locale initialization for intl package ──
+  await initializeDateFormatting('vi');
 
   // ── Firebase ──
   await Firebase.initializeApp(
@@ -45,7 +49,14 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  runApp(const NutrifitApp());
+  final authRepository = AuthRepository();
+  final authBloc = AuthBloc(authRepository: authRepository)
+    ..add(const AuthCheckRequested());
+
+  runApp(NutrifitApp(
+    authRepository: authRepository,
+    authBloc: authBloc,
+  ));
 }
 
 /// Root widget for the Nutrifit application.
@@ -53,7 +64,14 @@ void main() async {
 /// Wraps the widget tree with [RepositoryProvider] and [BlocProvider]
 /// so that [AuthRepository] and [AuthBloc] are available app-wide.
 class NutrifitApp extends StatefulWidget {
-  const NutrifitApp({super.key});
+  final AuthRepository authRepository;
+  final AuthBloc authBloc;
+
+  const NutrifitApp({
+    super.key,
+    required this.authRepository,
+    required this.authBloc,
+  });
 
   @override
   State<NutrifitApp> createState() => _NutrifitAppState();
@@ -65,7 +83,7 @@ class _NutrifitAppState extends State<NutrifitApp> {
   @override
   void initState() {
     super.initState();
-    _router = AppRouter.createRouter();
+    _router = AppRouter.createRouter(widget.authBloc);
   }
 
   @override
@@ -76,14 +94,12 @@ class _NutrifitAppState extends State<NutrifitApp> {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider(
-      create: (_) => AuthRepository(),
+    return RepositoryProvider.value(
+      value: widget.authRepository,
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(
-            create: (ctx) => AuthBloc(
-              authRepository: ctx.read<AuthRepository>(),
-            )..add(const AuthCheckRequested()),
+          BlocProvider.value(
+            value: widget.authBloc,
           ),
           BlocProvider(
             create: (_) => ActiveWorkoutCubit(),

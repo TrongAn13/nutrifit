@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../data/models/user_model.dart';
 import '../data/repositories/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
@@ -33,7 +34,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   // ───────────────────────── Event Handlers ─────────────────────────
 
-  /// Checks if a user is currently signed in.
+  /// Checks if a user is currently signed in and fetches profile.
   Future<void> _onCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
@@ -41,9 +42,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final firebaseUser = _repo.currentUser;
     if (firebaseUser == null) {
       emit(const AuthUnauthenticated());
+      return;
     }
-    // If user is already authenticated, do nothing — the state
-    // was already set by login/register handler.
+    
+    // Fetch user profile from Firestore to restore role
+    try {
+      final doc = await _repo.firestore.collection('users').doc(firebaseUser.uid).get();
+      if (doc.exists && doc.data() != null) {
+        final userModel = UserModel.fromJson(doc.data()!);
+        emit(AuthAuthenticated(userModel));
+      } else {
+        emit(const AuthUnauthenticated());
+      }
+    } catch (e) {
+      emit(const AuthUnauthenticated());
+    }
   }
 
   /// Handles email/password sign-in.
@@ -74,6 +87,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email,
         password: event.password,
         name: event.name,
+        role: event.role,
       );
       emit(AuthAuthenticated(user));
     } catch (e) {

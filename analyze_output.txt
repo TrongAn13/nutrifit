@@ -1,9 +1,8 @@
-Analyzing nutrition, tracking...
+Analyzing nutrifit...
 
-  error - lib\features\tracking\data\models\daily_log_model.dart:3:8 - Target of URI doesn't exist: '../../nutrition/data/models/water_entry_model.dart'. Try creating the file referenced by the URI, or try using a URI for a file that does exist. - uri_does_not_exist
-  error - lib\features\tracking\data\models\daily_log_model.dart:23:14 - The name 'WaterEntryModel' isn't a type, so it can't be used as a type argument. Try correcting the name to an existing type, or defining a type named 'WaterEntryModel'. - non_type_as_type_argument
-  error - lib\features\tracking\data\models\daily_log_model.dart:67:28 - Undefined name 'WaterEntryModel'. Try correcting the name to one that is defined, or defining the name. - undefined_identifier
-  error - lib\features\tracking\data\models\daily_log_model.dart:90:49 - The method 'toJson' can't be unconditionally invoked because the receiver can be 'null'. Try making the call conditional (using '?.') or adding a null check to the target ('!'). - unchecked_use_of_nullable_value
-  error - lib\features\tracking\data\models\daily_log_model.dart:112:10 - The name 'WaterEntryModel' isn't a type, so it can't be used as a type argument. Try correcting the name to an existing type, or defining a type named 'WaterEntryModel'. - non_type_as_type_argument
+warning - lib\features\workout\presentation\screens\create_plan_screen.dart:101:11 - The value of the local variable 'theme' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - lib\features\workout\presentation\screens\workout_dashboard.dart:369:11 - The value of the local variable 'theme' isn't used. Try removing the variable or using it. - unused_local_variable
+   info - lib\features\workout\presentation\screens\create_plan_screen.dart:100:10 - The member 'build' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation. - annotate_overrides
+   info - lib\features\workout\presentation\screens\workout_dashboard.dart:368:10 - The member 'build' overrides an inherited member but isn't annotated with '@override'. Try adding the '@override' annotation. - annotate_overrides
 
-5 issues found.
+4 issues found.

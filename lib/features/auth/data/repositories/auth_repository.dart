@@ -25,6 +25,8 @@ class AuthRepository {
   /// Currently signed-in Firebase user, or null.
   User? get currentUser => _auth.currentUser;
 
+  FirebaseFirestore get firestore => _firestore;
+
   // ───────────────────────── Sign Up ─────────────────────────
 
   /// Creates a new account with [email] and [password], then stores a
@@ -33,6 +35,7 @@ class AuthRepository {
     required String email,
     required String password,
     required String name,
+    String role = 'user',
   }) async {
     try {
       // 1. Create Firebase Auth user
@@ -51,11 +54,12 @@ class AuthRepository {
       // 3. Get FCM token
       final fcmToken = await _getFcmToken();
 
-      // 4. Build user model
+      // 4. Build user model with role
       final userModel = UserModel(
         uid: firebaseUser.uid,
         email: email,
         name: name,
+        role: role,
         createdAt: DateTime.now(),
       );
 

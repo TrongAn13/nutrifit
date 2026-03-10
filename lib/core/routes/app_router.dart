@@ -5,37 +5,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/logic/auth_bloc.dart';
+import '../../features/auth/logic/auth_state.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
-import '../../features/coach/presentation/screens/chat_screen.dart';
-import '../../features/main_nav/screens/main_navigation_screen.dart';
-import '../../features/nutrition/data/repositories/nutrition_repository.dart';
-import '../../features/nutrition/logic/food_bloc.dart';
-import '../../features/nutrition/logic/food_event.dart';
-import '../../features/nutrition/logic/nutrition_bloc.dart';
-import '../../features/nutrition/logic/nutrition_event.dart';
-import '../../features/nutrition/presentation/screens/food_search_screen.dart';
-import '../../features/nutrition/presentation/screens/meal_detail_screen.dart';
-import '../../features/nutrition/presentation/screens/water_tracking_screen.dart';
-import '../../features/nutrition/presentation/screens/food_collection_screen.dart';
-import '../../features/nutrition/logic/water_cubit.dart';
-import '../../features/workout/data/models/exercise_model.dart';
-import '../../features/workout/data/models/routine_model.dart';
-import '../../features/workout/data/models/workout_plan_model.dart';
-import '../../features/workout/data/repositories/workout_repository.dart';
-import '../../features/workout/logic/active_exercise_cubit.dart';
-import '../../features/workout/logic/exercise_library_bloc.dart';
-import '../../features/workout/logic/exercise_library_event.dart';
-import '../../features/workout/logic/plan_detail_cubit.dart';
-import '../../features/workout/logic/workout_template_bloc.dart';
-import '../../features/workout/logic/workout_template_event.dart';
-import '../../features/workout/presentation/screens/active_exercise_detail_screen.dart';
-import '../../features/workout/presentation/screens/active_workout_screen.dart';
-import '../../features/workout/presentation/screens/create_plan_screen.dart';
-import '../../features/workout/presentation/screens/exercise_library_screen.dart';
-import '../../features/workout/presentation/screens/plan_detail_screen.dart';
-import '../../features/workout/presentation/screens/routine_detail_screen.dart';
-import '../../features/workout/presentation/screens/workout_template_list_screen.dart';
+import '../../features/user/user_coach/chat_screen.dart';
+import '../../features/coach/main_nav/coach_main_screen.dart';
+import '../../features/coach/client_detail/client_detail_screen.dart';
+import '../../features/user/user_coach/coach_screen.dart';
+import '../../features/user/user_coach/presentation/notification_screen.dart';
+import '../../features/user/main_nav/screens/main_navigation_screen.dart';
+import '../../features/user/nutrition/data/repositories/nutrition_repository.dart';
+import '../../features/user/nutrition/logic/food_bloc.dart';
+import '../../features/user/nutrition/logic/food_event.dart';
+import '../../features/user/nutrition/logic/nutrition_bloc.dart';
+import '../../features/user/nutrition/logic/nutrition_event.dart';
+import '../../features/user/nutrition/logic/water_cubit.dart';
+import '../../features/user/nutrition/presentation/screens/food_collection_screen.dart';
+import '../../features/user/nutrition/presentation/screens/food_search_screen.dart';
+import '../../features/user/nutrition/presentation/screens/meal_detail_screen.dart';
+import '../../features/user/nutrition/presentation/screens/water_tracking_screen.dart';
+import '../../features/user/workout/data/models/exercise_model.dart';
+import '../../features/user/workout/data/models/routine_model.dart';
+import '../../features/user/workout/data/models/workout_plan_model.dart';
+import '../../features/user/workout/data/repositories/workout_repository.dart';
+import '../../features/user/workout/logic/active_exercise_cubit.dart';
+import '../../features/user/workout/logic/exercise_library_bloc.dart';
+import '../../features/user/workout/logic/exercise_library_event.dart';
+import '../../features/user/workout/logic/plan_detail_cubit.dart';
+import '../../features/user/workout/logic/workout_template_bloc.dart';
+import '../../features/user/workout/logic/workout_template_event.dart';
+import '../../features/user/workout/presentation/screens/active_exercise_detail_screen.dart';
+import '../../features/user/workout/presentation/screens/active_workout_screen.dart';
+import '../../features/user/workout/presentation/screens/create_plan_screen.dart';
+import '../../features/user/workout/presentation/screens/exercise_library_screen.dart';
+import '../../features/user/workout/presentation/screens/plan_detail_screen.dart';
+import '../../features/user/workout/presentation/screens/routine_detail_screen.dart';
+import '../../features/user/workout/presentation/screens/workout_template_list_screen.dart';
+
 
 /// Centralized router configuration using [GoRouter].
 /// Handles auth-based redirects and declares all application routes.
@@ -59,35 +66,57 @@ class AppRouter {
   static const String planDetail = '/plan-detail';
   static const String exerciseDetail = '/exercise-detail';
   static const String foodCollection = '/food-collection';
+  static const String coachMain = '/coach-main';
+  static const String clientDetail = '/client-detail';
+  static const String notifications = '/notifications';
+  static const String coach = '/coach';
 
   // ───────────────────────── Router Instance ─────────────────────────
 
-  /// Creates a [GoRouter] that reacts to Firebase auth state changes.
-  static GoRouter createRouter() {
+  /// Creates a [GoRouter] that reacts to [AuthBloc] state changes.
+  static GoRouter createRouter(AuthBloc authBloc) {
     return GoRouter(
       initialLocation: login,
       debugLogDiagnostics: true,
       routes: _routes,
-      redirect: _guardRedirect,
-      refreshListenable: _AuthNotifier(),
+      redirect: (context, state) => _guardRedirect(context, state, authBloc),
+      refreshListenable: _AppRouterNotifier(authBloc.stream),
       errorBuilder: (context, state) => const _ErrorPage(),
     );
   }
 
-  /// Global redirect logic based on authentication state.
+  /// Global redirect logic based on [AuthBloc] state and user roles.
   static String? _guardRedirect(
     BuildContext context,
     GoRouterState state,
+    AuthBloc authBloc,
   ) {
-    final bool isLoggedIn = FirebaseAuth.instance.currentUser != null;
+    final authState = authBloc.state;
     final bool isOnAuthPage =
         state.matchedLocation == login || state.matchedLocation == register;
 
-    // Not logged in → force to login page.
-    if (!isLoggedIn && !isOnAuthPage) return login;
+    // 1. Unauthenticated -> force login
+    if (authState is AuthUnauthenticated && !isOnAuthPage) {
+      return login;
+    }
 
-    // Logged in but still on auth page → send to main.
-    if (isLoggedIn && isOnAuthPage) return main;
+    // 2. Authenticated
+    if (authState is AuthAuthenticated) {
+      final isCoach = authState.user.role == 'coach';
+
+      // (a) They are on an auth page -> send to correct dashboard
+      if (isOnAuthPage) {
+        return isCoach ? coachMain : main;
+      }
+      // (b) They are a coach trying to view user dashboard -> redirect to coach
+      if (isCoach && state.matchedLocation == main) {
+        return coachMain;
+      }
+      // (c) They are a user trying to view coach dashboard -> redirect to user
+      if (!isCoach && state.matchedLocation == coachMain) {
+        return main;
+      }
+    }
 
     // No redirect needed.
     return null;
@@ -110,6 +139,33 @@ class AppRouter {
       path: main,
       name: 'main',
       builder: (context, state) => const MainNavigationScreen(),
+    ),
+    GoRoute(
+      path: coachMain,
+      name: 'coachMain',
+      builder: (context, state) => const CoachMainScreen(),
+    ),
+    GoRoute(
+      path: '$clientDetail/:id',
+      name: 'clientDetail',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ClientDetailScreen(
+          clientId: state.pathParameters['id'] ?? '',
+          clientName: extra['clientName'] as String? ?? 'Học viên',
+          clientGoal: extra['clientGoal'] as String? ?? '',
+        );
+      },
+    ),
+    GoRoute(
+      path: notifications,
+      name: 'notifications',
+      builder: (context, state) => const NotificationScreen(),
+    ),
+    GoRoute(
+      path: coach,
+      name: 'coach',
+      builder: (context, state) => const CoachScreen(),
     ),
     GoRoute(
       path: chat,
@@ -192,6 +248,7 @@ class AppRouter {
         return RoutineDetailScreen(
           routine: extra['routine'] as RoutineModel,
           planName: extra['planName'] as String,
+          planId: extra['planId'] as String?,
         );
       },
     ),
@@ -270,13 +327,13 @@ class AppRouter {
   ];
 }
 
-/// Notifies [GoRouter] whenever the Firebase auth state changes
+/// Notifies [GoRouter] whenever the [AuthBloc] state changes
 /// so that [redirect] re-evaluates.
-class _AuthNotifier extends ChangeNotifier {
-  late final StreamSubscription<User?> _sub;
+class _AppRouterNotifier extends ChangeNotifier {
+  late final StreamSubscription<AuthState> _sub;
 
-  _AuthNotifier() {
-    _sub = FirebaseAuth.instance.authStateChanges().listen((_) {
+  _AppRouterNotifier(Stream<AuthState> stream) {
+    _sub = stream.listen((_) {
       notifyListeners();
     });
   }
