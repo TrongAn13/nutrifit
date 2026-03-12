@@ -280,7 +280,13 @@ class _ConnectedCoachView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () => context.push('/chat'),
+                      onPressed: () => context.push(
+                        AppRouter.chatRoom,
+                        extra: {
+                          'peerId': coachId,
+                          'peerName': coachName,
+                        },
+                      ),
                       icon: const Icon(Icons.chat_bubble_outline, size: 18),
                       label: const Text('Nhắn tin'),
                       style: FilledButton.styleFrom(
@@ -320,80 +326,129 @@ class _ConnectedCoachView extends StatelessWidget {
               const SizedBox(height: 24),
 
               // ── Active Plan Card ──
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade100),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('workout_plans')
+                    .where('userId', isEqualTo: userId)
+                    .where('isActive', isEqualTo: true)
+                    .limit(1)
+                    .snapshots(),
+                builder: (context, planSnap) {
+                  final planDocs = planSnap.data?.docs ?? [];
+                  final hasPlan = planDocs.isNotEmpty;
+                  final planData = hasPlan ? planDocs.first.data() : null;
+                  final planName = planData?['name'] as String? ?? '';
+                  final totalWeeks = planData?['totalWeeks'] as int? ?? 0;
+                  final sessionsPerWeek =
+                      (planData?['trainingDays'] as List?)?.length ?? 0;
+
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade100),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.fitness_center_rounded,
-                            size: 20,
-                            color: Colors.blue.shade600,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.fitness_center_rounded,
+                                size: 20,
+                                color: Colors.blue.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                'Chương trình đang áp dụng',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text(
-                            'Chương trình đang áp dụng',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                        const SizedBox(height: 14),
+                        if (hasPlan)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.deepOrange.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  planName,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.deepOrange.shade800,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$totalWeeks tuần • $sessionsPerWeek buổi/tuần',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.deepOrange.shade400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.assignment_outlined,
+                                  size: 32,
+                                  color: Colors.grey.shade300,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Chưa có giáo án',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'HLV chưa giao giáo án cho bạn.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.assignment_outlined,
-                            size: 32,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Chưa có giáo án',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'HLV chưa giao giáo án cho bạn.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             ],
           ),

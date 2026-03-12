@@ -18,6 +18,10 @@ class WorkoutRepository {
   CollectionReference<Map<String, dynamic>> get _plansRef =>
       _firestore.collection('workout_plans');
 
+  /// Reference to the `coach_templates` collection for reusable plans.
+  CollectionReference<Map<String, dynamic>> get _templatesRef =>
+      _firestore.collection('coach_templates');
+
   /// Returns the currently signed-in user's UID, or throws.
   String get _uid {
     final user = _auth.currentUser;
@@ -60,12 +64,29 @@ class WorkoutRepository {
     }
   }
 
+  /// Fetches ALL coach templates created by the current user.
+  Future<List<WorkoutPlanModel>> getCoachTemplates() async {
+    try {
+      final snapshot = await _templatesRef
+          .where('userId', isEqualTo: _uid)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => WorkoutPlanModel.fromJson(doc.data()))
+          .toList();
+    } catch (e) {
+      throw Exception('Không thể tải mẫu giáo án: ${e.toString()}');
+    }
+  }
+
   // ───────────────────────── Write ─────────────────────────
 
   /// Creates a new workout plan document.
   Future<void> createPlan(WorkoutPlanModel plan) async {
     try {
-      await _plansRef.doc(plan.planId).set(plan.toJson());
+      final ref = plan.isTemplate ? _templatesRef : _plansRef;
+      await ref.doc(plan.planId).set(plan.toJson());
     } catch (e) {
       throw Exception('Không thể tạo giáo án: ${e.toString()}');
     }
@@ -74,7 +95,8 @@ class WorkoutRepository {
   /// Updates an existing workout plan document or creates it if it doesn't exist.
   Future<void> updatePlan(WorkoutPlanModel plan) async {
     try {
-      await _plansRef
+      final ref = plan.isTemplate ? _templatesRef : _plansRef;
+      await ref
           .doc(plan.planId)
           .set(plan.toJson(), SetOptions(merge: true));
     } catch (e) {
@@ -108,6 +130,15 @@ class WorkoutRepository {
       await _plansRef.doc(planId).delete();
     } catch (e) {
       throw Exception('Không thể xóa giáo án: ${e.toString()}');
+    }
+  }
+
+  /// Deletes a coach template by its [planId].
+  Future<void> deleteCoachTemplate(String planId) async {
+    try {
+      await _templatesRef.doc(planId).delete();
+    } catch (e) {
+      throw Exception('Không thể xóa mẫu giáo án: ${e.toString()}');
     }
   }
 

@@ -10,6 +10,7 @@ import '../../features/auth/logic/auth_state.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/user/user_coach/chat_screen.dart';
+import '../../features/chat/presentation/chat_room_screen.dart';
 import '../../features/coach/main_nav/coach_main_screen.dart';
 import '../../features/coach/client_detail/client_detail_screen.dart';
 import '../../features/user/user_coach/coach_screen.dart';
@@ -62,6 +63,8 @@ class AppRouter {
   static const String activeWorkout = '/active-workout';
   static const String exerciseLibrary = '/exercise-library';
   static const String createPlan = '/create-plan';
+  // --- Mới: Templates cho HLV ---
+  static const String createTemplate = '/create-template';
   static const String workoutTemplates = '/workout-templates';
   static const String planDetail = '/plan-detail';
   static const String exerciseDetail = '/exercise-detail';
@@ -70,6 +73,7 @@ class AppRouter {
   static const String clientDetail = '/client-detail';
   static const String notifications = '/notifications';
   static const String coach = '/coach';
+  static const String chatRoom = '/chat-room';
 
   // ───────────────────────── Router Instance ─────────────────────────
 
@@ -171,6 +175,18 @@ class AppRouter {
       path: chat,
       name: 'chat',
       builder: (context, state) => const ChatScreen(),
+    ),
+    GoRoute(
+      path: chatRoom,
+      name: 'chatRoom',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ChatRoomScreen(
+          peerId: extra['peerId'] as String? ?? '',
+          peerName: extra['peerName'] as String? ?? 'Chat',
+          peerAvatarUrl: extra['peerAvatarUrl'] as String?,
+        );
+      },
     ),
     GoRoute(
       path: foodLibrary,

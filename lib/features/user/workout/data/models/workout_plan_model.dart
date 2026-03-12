@@ -19,6 +19,8 @@ class WorkoutPlanModel {
   final bool isActive;
   final List<RoutineModel> routines;
   final DateTime createdAt;
+  final String? assignedByCoachId;
+  final bool isTemplate; // True if this is a reusable template created by a coach.
 
   /// Convenience getter: number of sessions equals the selected days count.
   int get sessionsPerWeek => trainingDays.length;
@@ -33,6 +35,8 @@ class WorkoutPlanModel {
     this.isActive = false,
     this.routines = const [],
     required this.createdAt,
+    this.assignedByCoachId,
+    this.isTemplate = false,
   });
 
   // ───────────────────────── JSON Serialization ─────────────────────────
@@ -66,6 +70,8 @@ class WorkoutPlanModel {
               .toList() ??
           [],
       createdAt: (json['createdAt'] as Timestamp).toDate(),
+      assignedByCoachId: json['assignedByCoachId'] as String?,
+      isTemplate: json['isTemplate'] as bool? ?? false,
     );
   }
 
@@ -81,6 +87,8 @@ class WorkoutPlanModel {
       'isActive': isActive,
       'routines': routines.map((r) => r.toJson()).toList(),
       'createdAt': Timestamp.fromDate(createdAt),
+      if (assignedByCoachId != null) 'assignedByCoachId': assignedByCoachId,
+      'isTemplate': isTemplate,
     };
   }
 
@@ -96,6 +104,8 @@ class WorkoutPlanModel {
     bool? isActive,
     List<RoutineModel>? routines,
     DateTime? createdAt,
+    String? assignedByCoachId,
+    bool? isTemplate,
   }) {
     return WorkoutPlanModel(
       planId: planId ?? this.planId,
@@ -107,6 +117,8 @@ class WorkoutPlanModel {
       isActive: isActive ?? this.isActive,
       routines: routines ?? this.routines,
       createdAt: createdAt ?? this.createdAt,
+      assignedByCoachId: assignedByCoachId ?? this.assignedByCoachId,
+      isTemplate: isTemplate ?? this.isTemplate,
     );
   }
 
