@@ -9,6 +9,8 @@ import '../../features/auth/logic/auth_bloc.dart';
 import '../../features/auth/logic/auth_state.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/onboarding/get_started_screen.dart';
+import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/user/user_coach/chat_screen.dart';
 import '../../features/chat/presentation/chat_room_screen.dart';
 import '../../features/coach/main_nav/coach_main_screen.dart';
@@ -52,6 +54,8 @@ class AppRouter {
 
   // ───────────────────────── Route Paths ─────────────────────────
 
+  static const String getStarted = '/get-started';
+  static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String register = '/register';
   static const String main = '/main';
@@ -78,9 +82,16 @@ class AppRouter {
   // ───────────────────────── Router Instance ─────────────────────────
 
   /// Creates a [GoRouter] that reacts to [AuthBloc] state changes.
-  static GoRouter createRouter(AuthBloc authBloc) {
+  ///
+  /// [hasSeenOnboarding] controls the initial route:
+  /// - `false` → `/get-started` (first launch)
+  /// - `true`  → `/login`
+  static GoRouter createRouter(
+    AuthBloc authBloc, {
+    bool hasSeenOnboarding = true,
+  }) {
     return GoRouter(
-      initialLocation: login,
+      initialLocation: hasSeenOnboarding ? login : getStarted,
       debugLogDiagnostics: true,
       routes: _routes,
       redirect: (context, state) => _guardRedirect(context, state, authBloc),
@@ -96,30 +107,29 @@ class AppRouter {
     AuthBloc authBloc,
   ) {
     final authState = authBloc.state;
-    final bool isOnAuthPage =
-        state.matchedLocation == login || state.matchedLocation == register;
+    final String loc = state.matchedLocation;
 
-    // 1. Unauthenticated -> force login
-    if (authState is AuthUnauthenticated && !isOnAuthPage) {
-      return login;
+    final bool isOnAuthPage = loc == login || loc == register;
+    final bool isOnOnboarding = loc == getStarted || loc == onboarding;
+
+    // 1. Unauthenticated users may freely view onboarding / auth pages.
+    if (authState is AuthUnauthenticated) {
+      if (!isOnAuthPage && !isOnOnboarding) return login;
+      return null;
     }
 
-    // 2. Authenticated
+    // 2. Authenticated users should never see onboarding or auth pages.
     if (authState is AuthAuthenticated) {
       final isCoach = authState.user.role == 'coach';
 
-      // (a) They are on an auth page -> send to correct dashboard
-      if (isOnAuthPage) {
+      // (a) They are on an auth or onboarding page -> send to correct dashboard
+      if (isOnAuthPage || isOnOnboarding) {
         return isCoach ? coachMain : main;
       }
       // (b) They are a coach trying to view user dashboard -> redirect to coach
-      if (isCoach && state.matchedLocation == main) {
-        return coachMain;
-      }
+      if (isCoach && loc == main) return coachMain;
       // (c) They are a user trying to view coach dashboard -> redirect to user
-      if (!isCoach && state.matchedLocation == coachMain) {
-        return main;
-      }
+      if (!isCoach && loc == coachMain) return main;
     }
 
     // No redirect needed.
@@ -129,6 +139,16 @@ class AppRouter {
   // ───────────────────────── Routes ─────────────────────────
 
   static final List<RouteBase> _routes = <RouteBase>[
+    GoRoute(
+      path: getStarted,
+      name: 'getStarted',
+      builder: (context, state) => const GetStartedScreen(),
+    ),
+    GoRoute(
+      path: onboarding,
+      name: 'onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
     GoRoute(
       path: login,
       name: 'login',
