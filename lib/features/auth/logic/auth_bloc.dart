@@ -23,6 +23,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLoginRequested>(_onLoginRequested);
     on<AuthRegisterRequested>(_onRegisterRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
+    on<AuthProfileSetupCompleted>(_onProfileSetupCompleted);
 
     // Listen to Firebase auth state changes
     _authSub = _repo.authStateChanges.listen((firebaseUser) {
@@ -50,7 +51,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final doc = await _repo.firestore.collection('users').doc(firebaseUser.uid).get();
       if (doc.exists && doc.data() != null) {
         final userModel = UserModel.fromJson(doc.data()!);
-        emit(AuthAuthenticated(userModel));
+        // If profile setup is not complete, redirect to profile-setup flow
+        if (!userModel.isProfileComplete) {
+          emit(AuthNewlyRegistered(userModel));
+        } else {
+          emit(AuthAuthenticated(userModel));
+        }
       } else {
         emit(const AuthUnauthenticated());
       }
@@ -89,7 +95,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         name: event.name,
         role: event.role,
       );
-      emit(AuthAuthenticated(user));
+      emit(AuthNewlyRegistered(user));
     } catch (e) {
       emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
     }
@@ -102,6 +108,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     await _repo.signOut();
     emit(const AuthUnauthenticated());
+  }
+
+  /// Transitions from newly-registered to fully authenticated.
+  Future<void> _onProfileSetupCompleted(
+    AuthProfileSetupCompleted event,
+    Emitter<AuthState> emit,
+  ) async {
+    final current = state;
+    if (current is AuthAuthenticated) {
+      // Re-fetch profile from Firestore to get updated fields
+      try {
+        final doc = await _repo.firestore
+            .collection('users')
+            .doc(current.user.uid)
+            .get();
+        if (doc.exists && doc.data() != null) {
+          final updatedUser = UserModel.fromJson(doc.data()!);
+          emit(AuthAuthenticated(updatedUser));
+        } else {
+          emit(AuthAuthenticated(current.user));
+        }
+      } catch (_) {
+        emit(AuthAuthenticated(current.user));
+      }
+    }
   }
 
   // ───────────────────────── Lifecycle ─────────────────────────

@@ -36,3 +36,11 @@ final class AuthError extends AuthState {
 final class AuthUnauthenticated extends AuthState {
   const AuthUnauthenticated();
 }
+
+/// User just registered and needs to complete profile setup.
+///
+/// Extends [AuthAuthenticated] so the user is technically signed in,
+/// but the router will redirect to the profile-setup flow.
+final class AuthNewlyRegistered extends AuthAuthenticated {
+  const AuthNewlyRegistered(super.user);
+}

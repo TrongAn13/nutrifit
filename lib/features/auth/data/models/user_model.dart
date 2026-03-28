@@ -22,6 +22,7 @@ class UserModel {
   final String? otherAllergies; // custom allergies text
   final String? coachId; // ID of linked coach (for users)
   final List<String>? clientIds; // IDs of managed clients (for coaches)
+  final bool isProfileComplete;
   final DateTime createdAt;
 
   const UserModel({
@@ -45,6 +46,7 @@ class UserModel {
     this.otherAllergies,
     this.coachId,
     this.clientIds,
+    this.isProfileComplete = false,
     required this.createdAt,
   });
 
@@ -74,6 +76,7 @@ class UserModel {
       otherAllergies: json['otherAllergies'] as String?,
       coachId: json['coachId'] as String?,
       clientIds: (json['clientIds'] as List<dynamic>?)?.cast<String>(),
+      isProfileComplete: json['isProfileComplete'] as bool? ?? false,
       createdAt: (json['createdAt'] as Timestamp).toDate(),
     );
   }
@@ -100,6 +103,7 @@ class UserModel {
       'otherAllergies': otherAllergies,
       'coachId': coachId,
       'clientIds': clientIds,
+      'isProfileComplete': isProfileComplete,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -127,6 +131,7 @@ class UserModel {
     String? otherAllergies,
     String? coachId,
     List<String>? clientIds,
+    bool? isProfileComplete,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -150,6 +155,7 @@ class UserModel {
       otherAllergies: otherAllergies ?? this.otherAllergies,
       coachId: coachId ?? this.coachId,
       clientIds: clientIds ?? this.clientIds,
+      isProfileComplete: isProfileComplete ?? this.isProfileComplete,
       createdAt: createdAt ?? this.createdAt,
     );
   }

@@ -9,6 +9,9 @@ import '../../features/auth/logic/auth_bloc.dart';
 import '../../features/auth/logic/auth_state.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/profile_setup/profile_setup_screen.dart';
+import '../../features/auth/profile_setup/goal_selection_screen.dart';
+import '../../features/auth/profile_setup/welcome_success_screen.dart';
 import '../../features/onboarding/get_started_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/user/user_coach/chat_screen.dart';
@@ -78,6 +81,9 @@ class AppRouter {
   static const String notifications = '/notifications';
   static const String coach = '/coach';
   static const String chatRoom = '/chat-room';
+  static const String profileSetup = '/profile-setup';
+  static const String goalSelection = '/goal-selection';
+  static const String welcomeSuccess = '/welcome-success';
 
   // ───────────────────────── Router Instance ─────────────────────────
 
@@ -111,6 +117,8 @@ class AppRouter {
 
     final bool isOnAuthPage = loc == login || loc == register;
     final bool isOnOnboarding = loc == getStarted || loc == onboarding;
+    final bool isOnProfileSetup =
+        loc == profileSetup || loc == goalSelection || loc == welcomeSuccess;
 
     // 1. Unauthenticated users may freely view onboarding / auth pages.
     if (authState is AuthUnauthenticated) {
@@ -118,17 +126,21 @@ class AppRouter {
       return null;
     }
 
-    // 2. Authenticated users should never see onboarding or auth pages.
+    // 2. Newly registered user → allow profile-setup pages only.
+    if (authState is AuthNewlyRegistered) {
+      if (isOnProfileSetup) return null;
+      if (isOnAuthPage || isOnOnboarding) return profileSetup;
+      return profileSetup;
+    }
+
+    // 3. Authenticated users should never see onboarding or auth pages.
     if (authState is AuthAuthenticated) {
       final isCoach = authState.user.role == 'coach';
 
-      // (a) They are on an auth or onboarding page -> send to correct dashboard
-      if (isOnAuthPage || isOnOnboarding) {
+      if (isOnAuthPage || isOnOnboarding || isOnProfileSetup) {
         return isCoach ? coachMain : main;
       }
-      // (b) They are a coach trying to view user dashboard -> redirect to coach
       if (isCoach && loc == main) return coachMain;
-      // (c) They are a user trying to view coach dashboard -> redirect to user
       if (!isCoach && loc == coachMain) return main;
     }
 
@@ -158,6 +170,29 @@ class AppRouter {
       path: register,
       name: 'register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: profileSetup,
+      name: 'profileSetup',
+      builder: (context, state) => const ProfileSetupScreen(),
+    ),
+    GoRoute(
+      path: goalSelection,
+      name: 'goalSelection',
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>? ?? {};
+        return GoalSelectionScreen(
+          gender: data['gender'] as String? ?? '',
+          birthDate: data['birthDate'] as DateTime?,
+          weight: data['weight'] as double? ?? 0,
+          height: data['height'] as double? ?? 0,
+        );
+      },
+    ),
+    GoRoute(
+      path: welcomeSuccess,
+      name: 'welcomeSuccess',
+      builder: (context, state) => const WelcomeSuccessScreen(),
     ),
     GoRoute(
       path: main,

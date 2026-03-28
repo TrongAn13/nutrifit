@@ -38,3 +38,8 @@ final class AuthRegisterRequested extends AuthEvent {
 final class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
 }
+
+/// Profile setup flow completed — transition to fully authenticated.
+final class AuthProfileSetupCompleted extends AuthEvent {
+  const AuthProfileSetupCompleted();
+}
