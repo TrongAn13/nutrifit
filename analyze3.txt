@@ -1,0 +1,11 @@
+Analyzing nutrifit...
+
+  error - lib\core\routes\app_router.dart:69:32 - Undefined class 'AuthBloc'. Try changing the name to the name of an existing class, or creating a class with the name 'AuthBloc'. - undefined_class
+  error - lib\core\routes\app_router.dart:84:5 - Undefined class 'AuthBloc'. Try changing the name to the name of an existing class, or creating a class with the name 'AuthBloc'. - undefined_class
+  error - lib\core\routes\app_router.dart:91:22 - The name 'AuthUnauthenticated' isn't defined, so it can't be used in an 'is' expression. Try changing the name to the name of an existing type, or creating a type with the name 'AuthUnauthenticated'. - type_test_with_undefined_name
+  error - lib\core\routes\app_router.dart:96:22 - The name 'AuthAuthenticated' isn't defined, so it can't be used in an 'is' expression. Try changing the name to the name of an existing type, or creating a type with the name 'AuthAuthenticated'. - type_test_with_undefined_name
+  error - lib\core\routes\app_router.dart:303:33 - The name 'AuthState' isn't a type, so it can't be used as a type argument. Try correcting the name to an existing type, or defining a type named 'AuthState'. - non_type_as_type_argument
+  error - lib\core\routes\app_router.dart:305:29 - The name 'AuthState' isn't a type, so it can't be used as a type argument. Try correcting the name to an existing type, or defining a type named 'AuthState'. - non_type_as_type_argument
+  error - lib\features\auth\logic\auth_bloc.dart:51:27 - Undefined name 'UserModel'. Try correcting the name to one that is defined, or defining the name. - undefined_identifier
+
+7 issues found.

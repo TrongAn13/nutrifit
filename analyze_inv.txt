@@ -1,0 +1,9 @@
+Analyzing user_model.dart, user_coach, coach, app_router.dart...
+
+  error - lib\features\user\user_coach\coach_screen.dart:8:8 - Target of URI doesn't exist: '../data/invitation_repository.dart'. Try creating the file referenced by the URI, or try using a URI for a file that does exist. - uri_does_not_exist
+  error - lib\features\user\user_coach\coach_screen.dart:431:13 - The method 'InvitationRepository' isn't defined for the type '_ConnectedCoachView'. Try correcting the name to the name of an existing method, or defining a method named 'InvitationRepository'. - undefined_method
+warning - lib\features\coach\presentation\screens\coach_dashboard_screen.dart:5:8 - Unused import: 'package:flutter_bloc/flutter_bloc.dart'. Try removing the import directive. - unused_import
+warning - lib\features\coach\presentation\screens\coach_dashboard_screen.dart:9:8 - Unused import: '../../../auth/logic/auth_bloc.dart'. Try removing the import directive. - unused_import
+warning - lib\features\coach\presentation\screens\coach_dashboard_screen.dart:10:8 - Unused import: '../../../auth/logic/auth_state.dart'. Try removing the import directive. - unused_import
+
+5 issues found.

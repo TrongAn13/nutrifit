@@ -1,0 +1,16 @@
+
+warning - The declaration '_kTextGrey' isn't referenced - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:25:13 - unused_element
+warning - The value of the local variable 'gridCells' isn't used - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:347:11 - unused_local_variable
+  error - The constructor being called isn't a const constructor - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:423:102 - const_with_non_const
+warning - The value of the local variable 'histories' isn't used - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:483:37 - unused_local_variable
+  error - The name 'ActivePlanLoaded' isn't defined, so it can't be used in an 'is' expression - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:483:58 - type_test_with_undefined_name
+warning - Dead code - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:483:82 - dead_code
+warning - The value of the local variable 'now' isn't used - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:606:11 - unused_local_variable
+  error - Undefined name 'FirebaseAuth' - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:609:15 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:715:7 - use_build_context_synchronously
+warning - The '!' will have no effect because the receiver can't be null - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:840:58 - unnecessary_non_null_assertion
+   info - Unnecessary use of multiple underscores - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:1050:31 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:1050:35 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:1053:29 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\trainee\dashboard\presentation\screens\trainee_schedule_screen.dart:1053:33 - unnecessary_underscores
+
