@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'barcode_scanner_screen.dart';
+import 'food_detail_screen.dart';
 
 import '../../data/models/food_model.dart';
 import '../../data/repositories/nutrition_repository.dart';
@@ -10,6 +14,13 @@ import '../../logic/nutrition_bloc.dart';
 import '../../logic/nutrition_event.dart';
 import '../../logic/nutrition_state.dart';
 import '../../../tracking/data/models/daily_log_model.dart';
+
+// ── Dark theme constants ──
+const Color _kBg = Color(0xFF060708);
+const Color _kCardBg = Color(0xFF1A1D23);
+const Color _kSurface = Color(0xFF12141A);
+const Color _kLime = Color(0xFFE2FF54);
+const Color _kBorder = Color(0x14FFFFFF); // white 8%
 
 /// Food search screen acting as a "cart" — lets the trainee browse multiple tabs,
 /// pick foods, and confirm them all at once for a given meal.
@@ -141,6 +152,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     });
   }
 
+  /// Count of items in the CURRENT meal only.
+  int get _currentMealItemCount =>
+      (_selectedFoodsByMeal[_currentMealName] ?? []).length;
+
   int get _cartTotalItems =>
       _selectedFoodsByMeal.values.fold(0, (sum, list) => sum + list.length);
 
@@ -188,7 +203,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
         list.clear();
       }
     } catch (e) {
-      debugPrint('Lỗi khi tự động lưu thức ăn: $e');
+      debugPrint('Error auto-saving foods: $e');
     }
   }
 
@@ -196,7 +211,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
   Future<void> _onComplete(BuildContext context) async {
     if (_cartTotalItems == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ít nhất một món.')),
+        SnackBar(
+          backgroundColor: _kCardBg,
+          content: Text(
+            'Please select at least one item.',
+            style: GoogleFonts.inter(color: Colors.white),
+          ),
+        ),
       );
       return;
     }
@@ -227,12 +248,12 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
           _saveFoods();
         },
         child: Scaffold(
-          backgroundColor: Colors.grey[50],
+          backgroundColor: _kBg,
           appBar: _buildAppBar(context),
           body: Column(
             children: [
               // ── Search bar + Quick actions ──
-              _SearchAndActions(),
+              _SearchAndActions(onBarcodeScan: _openBarcodeScanner),
               const SizedBox(height: 4),
 
               // ── TabBar ──
@@ -245,6 +266,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
                   children: [
                     _RecentTab(
                       onAddFood: _addToCart,
+                      onFoodTap: _openFoodDetail,
                       mealType: _mealKeyMap[widget.mealName] ?? 'snack',
                     ),
                     BlocBuilder<FoodBloc, FoodState>(
@@ -252,14 +274,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
                         if (foodState is FoodLoading ||
                             foodState is FoodInitial) {
                           return const Center(
-                            child: CircularProgressIndicator(),
+                            child: CircularProgressIndicator(color: _kLime),
                           );
                         }
                         if (foodState is FoodError) {
                           return Center(
                             child: Text(
-                              'Lỗi: ${foodState.message}',
-                              style: TextStyle(color: Colors.grey[500]),
+                              'Error: ${foodState.message}',
+                              style: GoogleFonts.inter(
+                                color: Colors.white54,
+                              ),
                             ),
                           );
                         }
@@ -280,10 +304,11 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
                           onCategoryChanged: (cat) =>
                               setState(() => _selectedCategory = cat),
                           onAddFood: _addToCart,
+                          onFoodTap: _openFoodDetail,
                         );
                       },
                     ),
-                    _CollectionsTab(),
+                    const _CollectionsTab(),
                     _QuickLogTab(
                       nameCtrl: _quickNameCtrl,
                       calCtrl: _quickCalCtrl,
@@ -310,14 +335,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
   // ─────────────────────────────────────────────────────────────────────────
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    final theme = Theme.of(context);
     final dateLabel = '${widget.date.day}/${widget.date.month}';
 
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: _kBg,
       surfaceTintColor: Colors.transparent,
+      elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
         onPressed: () async {
           await _saveFoods();
           if (context.mounted) {
@@ -329,14 +354,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
       title: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: _kCardBg,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _kBorder),
         ),
         child: Text(
           '$_currentMealName • $dateLabel',
-          style: theme.textTheme.bodyMedium?.copyWith(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Colors.white,
+            fontSize: 14,
           ),
         ),
       ),
@@ -349,19 +376,28 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
 
   Widget _buildTabBar(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: _kBg,
       child: TabBar(
         controller: _tabController,
-        labelColor: const Color(0xFF4CAF50),
-        unselectedLabelColor: Colors.grey[500],
-        indicatorColor: const Color(0xFF4CAF50),
+        labelColor: _kLime,
+        unselectedLabelColor: Colors.white54,
+        indicatorColor: _kLime,
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        isScrollable: false,
+        labelStyle: GoogleFonts.inter(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
+        unselectedLabelStyle: GoogleFonts.inter(
+          fontWeight: FontWeight.w400,
+          fontSize: 13,
+        ),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
         tabs: const [
-          Tab(text: 'Gần đây'),
-          Tab(text: 'Phổ biến'),
-          Tab(text: 'Bộ sưu tập'),
-          Tab(text: 'Ghi nhanh'),
+          Tab(text: 'Recent'),
+          Tab(text: 'Popular'),
+          Tab(text: 'Saved'),
+          Tab(text: 'Quick Log'),
         ],
       ),
     );
@@ -372,52 +408,44 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
   // ─────────────────────────────────────────────────────────────────────────
 
   Widget _buildBottomBar(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: _kCardBg,
+        border: Border(top: BorderSide(color: _kBorder)),
       ),
       child: SafeArea(
         child: Row(
           children: [
-            // ── Left: meal button with badge ──
+            // ── Left: meal button with badge (current meal count only) ──
             Expanded(
               child: GestureDetector(
                 onTap: _showCartSheet,
                 child: Row(
                   children: [
-                    // Icon with optional badge
+                    // Icon with per-meal badge
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.restaurant_menu,
-                          color: Colors.grey[700],
+                          color: Colors.white70,
                           size: 22,
                         ),
-                        if (_cartTotalItems > 0)
+                        if (_currentMealItemCount > 0)
                           Positioned(
                             top: -6,
                             right: -8,
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: const BoxDecoration(
-                                color: Colors.red,
+                                color: _kLime,
                                 shape: BoxShape.circle,
                               ),
                               child: Text(
-                                '$_cartTotalItems',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                '$_currentMealItemCount',
+                                style: GoogleFonts.inter(
+                                  color: Colors.black,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -430,17 +458,18 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
                     Flexible(
                       child: Text(
                         _currentMealName,
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: Colors.white,
+                          fontSize: 14,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(
+                    const Icon(
                       Icons.keyboard_arrow_up,
-                      color: Colors.grey[500],
+                      color: Colors.white54,
                       size: 20,
                     ),
                   ],
@@ -452,8 +481,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
             FilledButton(
               onPressed: () => _onComplete(context),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white,
+                backgroundColor: _kLime,
+                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -462,9 +491,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
                   vertical: 12,
                 ),
               ),
-              child: const Text(
-                'Hoàn thành',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              child: Text(
+                'Done',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
               ),
             ),
           ],
@@ -486,6 +515,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: _kCardBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -522,7 +552,13 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập tên thực phẩm')),
+        SnackBar(
+          backgroundColor: _kCardBg,
+          content: Text(
+            'Please enter food name',
+            style: GoogleFonts.inter(color: Colors.white),
+          ),
+        ),
       );
       return;
     }
@@ -530,7 +566,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     final food = FoodModel(
       foodId: 'quick_${DateTime.now().millisecondsSinceEpoch}',
       name: name,
-      category: 'Ghi nhanh',
+      category: 'Quick Log',
       calories: cal,
       protein: protein,
       fat: fat,
@@ -547,9 +583,58 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     _quickFatCtrl.clear();
     _quickCarbsCtrl.clear();
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Đã thêm "$name" vào giỏ')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: _kCardBg,
+        content: Text(
+          'Added "$name" to cart',
+          style: GoogleFonts.inter(color: _kLime),
+        ),
+      ),
+    );
+  }
+
+  /// Opens the barcode scanner, then navigates to FoodDetailScreen.
+  void _openBarcodeScanner() async {
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => const BarcodeScannerScreen(),
+      ),
+    );
+
+    if (result != null && mounted) {
+      final food = FoodModel(
+        foodId: 'barcode_${result['barcode'] ?? DateTime.now().millisecondsSinceEpoch}',
+        name: result['name'] as String? ?? 'Unknown',
+        category: 'Barcode',
+        calories: (result['calories'] as num?)?.toDouble() ?? 0,
+        protein: (result['protein'] as num?)?.toDouble() ?? 0,
+        fat: (result['fat'] as num?)?.toDouble() ?? 0,
+        carbs: (result['carbs'] as num?)?.toDouble() ?? 0,
+        imageUrl: result['imageUrl'] as String?,
+        createdAt: DateTime.now(),
+      );
+      // Open detail screen so user can review before logging
+      _openFoodDetail(food);
+    }
+  }
+
+  /// Opens [FoodDetailScreen] for preview. If user presses "Log",
+  /// the returned [FoodModel] is added to the cart.
+  void _openFoodDetail(FoodModel food) async {
+    final result = await Navigator.of(context).push<FoodModel>(
+      MaterialPageRoute(
+        builder: (_) => FoodDetailScreen(
+          food: food,
+          mealName: _currentMealName,
+          date: widget.date,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      _addToCart(result);
+    }
   }
 }
 
@@ -558,12 +643,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _SearchAndActions extends StatelessWidget {
+  final VoidCallback? onBarcodeScan;
+
+  const _SearchAndActions({this.onBarcodeScan});
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Container(
-      color: Colors.white,
+      color: _kBg,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Column(
         children: [
@@ -571,18 +658,20 @@ class _SearchAndActions extends StatelessWidget {
           Container(
             height: 44,
             decoration: BoxDecoration(
+              color: _kCardBg,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300, width: 0.8),
+              border: Border.all(color: _kBorder),
             ),
             child: Row(
               children: [
                 const SizedBox(width: 12),
-                Icon(Icons.search, color: Colors.grey[400], size: 20),
+                const Icon(Icons.search, color: Colors.white38, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Tìm kiếm thực phẩm...',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[400],
+                  'Search food...',
+                  style: GoogleFonts.inter(
+                    color: Colors.white38,
+                    fontSize: 14,
                   ),
                 ),
               ],
@@ -600,12 +689,13 @@ class _SearchAndActions extends StatelessWidget {
               const SizedBox(width: 10),
               _QuickActionCard(
                 icon: Icons.qr_code_scanner,
-                label: 'Quét mã vạch',
+                label: 'Barcode',
+                onTap: onBarcodeScan,
               ),
               const SizedBox(width: 10),
               _QuickActionCard(
                 icon: Icons.mic_none_outlined,
-                label: 'Calo Voice',
+                label: 'Voice',
               ),
             ],
           ),
@@ -618,33 +708,41 @@ class _SearchAndActions extends StatelessWidget {
 class _QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
-  const _QuickActionCard({required this.icon, required this.label});
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: Colors.grey[700]),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w500,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: _kCardBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kBorder),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: _kLime),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -699,7 +797,6 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
     return SizedBox(
@@ -714,7 +811,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Colors.white24,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -729,7 +826,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                 Flexible(
                   flex: 3,
                   child: Container(
-                    color: Colors.grey[100],
+                    color: _kSurface,
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: _mealSlots.length,
@@ -737,6 +834,8 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                         final slot = _mealSlots[index];
                         final label = slot['label']!;
                         final isSelected = label == _selectedMeal;
+                        final itemCount =
+                            (widget.selectedFoodsByMeal[label] ?? []).length;
 
                         return GestureDetector(
                           onTap: () {
@@ -757,20 +856,49 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? Colors.white
+                                  ? _kCardBg
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(10),
+                              border: isSelected
+                                  ? Border.all(color: _kLime.withValues(alpha: 0.3))
+                                  : null,
                             ),
-                            child: Text(
-                              label,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: isSelected
-                                    ? Colors.black87
-                                    : Colors.grey[500],
-                              ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    label,
+                                    style: GoogleFonts.inter(
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.white54,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                if (itemCount > 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _kLime,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '$itemCount',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         );
@@ -783,35 +911,41 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                 Flexible(
                   flex: 7,
                   child: Container(
-                    color: Colors.white,
+                    color: _kCardBg,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header
+                        // Header — shows count for THIS meal only
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                           child: RichText(
                             text: TextSpan(
                               children: [
                                 TextSpan(
-                                  text: 'Đã ghi ${_currentList.length} món • ',
-                                  style: theme.textTheme.titleSmall?.copyWith(
+                                  text:
+                                      '${_currentList.length} items • ',
+                                  style: GoogleFonts.inter(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: Colors.white,
+                                    fontSize: 14,
                                   ),
                                 ),
                                 TextSpan(
-                                  text: '${_totalCalories.toInt()} Calo',
-                                  style: theme.textTheme.titleSmall?.copyWith(
+                                  text: '${_totalCalories.toInt()} Cal',
+                                  style: GoogleFonts.inter(
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF4CAF50),
+                                    color: _kLime,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        Divider(height: 1, color: Colors.grey[200]),
+                        Divider(
+                          height: 1,
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
 
                         // Food list or empty state
                         Expanded(
@@ -820,16 +954,17 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.no_food_outlined,
                                         size: 48,
-                                        color: Colors.grey[300],
+                                        color: Colors.white24,
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
-                                        'Chưa có thực phẩm được ghi.',
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(color: Colors.grey[500]),
+                                        'No food logged yet.',
+                                        style: GoogleFonts.inter(
+                                          color: Colors.white38,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -840,9 +975,10 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                                     vertical: 8,
                                   ),
                                   itemCount: _currentList.length,
-                                  separatorBuilder: (_, _) => Divider(
+                                  separatorBuilder: (_, __) => Divider(
                                     height: 1,
-                                    color: Colors.grey[200],
+                                    color:
+                                        Colors.white.withValues(alpha: 0.06),
                                   ),
                                   itemBuilder: (_, index) {
                                     final food = _currentList[index];
@@ -855,33 +991,34 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                                         width: 40,
                                         height: 40,
                                         decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
-                                        child: Icon(
+                                        child: const Icon(
                                           Icons.restaurant,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: _kCardBg,
                                         ),
                                       ),
                                       title: Text(
                                         food.name,
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                       subtitle: Text(
-                                        '${food.calories.toInt()} Calo • 100g',
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(color: Colors.grey[500]),
+                                        '${food.calories.toInt()} Cal • 100g',
+                                        style: GoogleFonts.inter(
+                                          color: Colors.white54,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                       trailing: IconButton(
-                                        icon: Icon(
+                                        icon: const Icon(
                                           Icons.delete_outline,
-                                          color: Colors.grey[500],
+                                          color: Colors.white38,
                                         ),
                                         onPressed: () {
                                           if (food.category == '#SAVED#') {
@@ -922,14 +1059,17 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
 
 class _RecentTab extends StatelessWidget {
   final ValueChanged<FoodModel> onAddFood;
+  final ValueChanged<FoodModel> onFoodTap;
   final String mealType;
 
-  const _RecentTab({required this.onAddFood, required this.mealType});
+  const _RecentTab({
+    required this.onAddFood,
+    required this.onFoodTap,
+    required this.mealType,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return BlocBuilder<NutritionBloc, NutritionState>(
       builder: (context, state) {
         // Extract logged meals for this meal type from the daily log
@@ -953,13 +1093,11 @@ class _RecentTab extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history, size: 48, color: Colors.grey[300]),
+                  const Icon(Icons.history, size: 48, color: Colors.white24),
                   const SizedBox(height: 12),
                   Text(
-                    'Chưa có món nào được ghi cho bữa này.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[400],
-                    ),
+                    'No recent items for this meal.',
+                    style: GoogleFonts.inter(color: Colors.white38),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -971,51 +1109,57 @@ class _RecentTab extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           itemCount: recentMeals.length,
-          separatorBuilder: (context, index) =>
-              Divider(height: 1, color: Colors.grey[200]),
+          separatorBuilder: (context, index) => Divider(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.06),
+          ),
           itemBuilder: (context, index) {
             final meal = recentMeals[index];
+            final foodModel = FoodModel(
+              foodId: meal.mealId,
+              name: meal.name,
+              category: 'Recent',
+              calories: meal.calories,
+              protein: meal.protein,
+              fat: meal.fat,
+              carbs: meal.carbs,
+              imageUrl: null, // Since MealEntry doesn't store imageUrl yet
+              createdAt: DateTime.now(),
+            );
+
             return ListTile(
               contentPadding: const EdgeInsets.symmetric(vertical: 4),
+              onTap: () => onFoodTap(foodModel),
               leading: Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.restaurant,
                   size: 22,
-                  color: Colors.grey[400],
+                  color: _kCardBg,
                 ),
               ),
               title: Text(
                 meal.name,
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               subtitle: Text(
-                '${meal.calories.toInt()} Calo',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[500],
+                '${meal.calories.toInt()} Cal',
+                style: GoogleFonts.inter(
+                  color: Colors.white54,
+                  fontSize: 12,
                 ),
               ),
               trailing: IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () => onAddFood(
-                  FoodModel(
-                    foodId: meal.mealId,
-                    name: meal.name,
-                    category: 'Gần đây',
-                    calories: meal.calories,
-                    protein: meal.protein,
-                    fat: meal.fat,
-                    carbs: meal.carbs,
-                    createdAt: DateTime.now(),
-                  ),
-                ),
+                icon: const Icon(Icons.add, color: _kLime),
+                onPressed: () => onAddFood(foodModel),
               ),
             );
           },
@@ -1035,6 +1179,7 @@ class _PopularTab extends StatelessWidget {
   final String selectedCategory;
   final ValueChanged<String> onCategoryChanged;
   final ValueChanged<FoodModel> onAddFood;
+  final ValueChanged<FoodModel> onFoodTap;
 
   const _PopularTab({
     required this.foods,
@@ -1042,12 +1187,11 @@ class _PopularTab extends StatelessWidget {
     required this.selectedCategory,
     required this.onCategoryChanged,
     required this.onAddFood,
+    required this.onFoodTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     final filteredFoods = selectedCategory == 'Tất cả'
         ? foods
         : foods.where((f) => f.category == selectedCategory).toList();
@@ -1058,46 +1202,58 @@ class _PopularTab extends StatelessWidget {
         // ── Category sidebar ──
         SizedBox(
           width: 100,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: categories.length,
-            itemBuilder: (_, index) {
-              final cat = categories[index];
-              final isSelected = cat == selectedCategory;
+          child: Container(
+            color: _kSurface,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: categories.length,
+              itemBuilder: (_, index) {
+                final cat = categories[index];
+                final isSelected = cat == selectedCategory;
 
-              return GestureDetector(
-                onTap: () => onCategoryChanged(cat),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.grey[200] : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    cat,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: isSelected ? Colors.black87 : Colors.grey[500],
+                return GestureDetector(
+                  onTap: () => onCategoryChanged(cat),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected ? _kCardBg : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      border: isSelected
+                          ? Border.all(
+                              color: _kLime.withValues(alpha: 0.3),
+                            )
+                          : null,
+                    ),
+                    child: Text(
+                      cat,
+                      style: GoogleFonts.inter(
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        color: isSelected ? Colors.white : Colors.white54,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
 
         // Vertical divider
-        Container(width: 0.5, color: Colors.grey[300]),
+        Container(
+          width: 0.5,
+          color: Colors.white.withValues(alpha: 0.08),
+        ),
 
         // ── Food list ──
         Expanded(
@@ -1106,10 +1262,8 @@ class _PopularTab extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(
-                      'Không có thực phẩm nào trong danh mục này.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[500],
-                      ),
+                      'No food in this category.',
+                      style: GoogleFonts.inter(color: Colors.white38),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -1120,12 +1274,13 @@ class _PopularTab extends StatelessWidget {
                     vertical: 8,
                   ),
                   itemCount: filteredFoods.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 6),
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
                   itemBuilder: (_, index) {
                     final food = filteredFoods[index];
                     return _PopularFoodItem(
                       food: food,
                       onAdd: () => onAddFood(food),
+                      onTap: () => onFoodTap(food),
                     );
                   },
                 ),
@@ -1139,37 +1294,39 @@ class _PopularTab extends StatelessWidget {
 class _PopularFoodItem extends StatelessWidget {
   final FoodModel food;
   final VoidCallback onAdd;
+  final VoidCallback onTap;
 
-  const _PopularFoodItem({required this.food, required this.onAdd});
+  const _PopularFoodItem({
+    required this.food,
+    required this.onAdd,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: _kCardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _kBorder),
+        ),
+        child: Row(
         children: [
-          // Placeholder image
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(Icons.restaurant, size: 22, color: Colors.grey[400]),
+          // Image or Placeholder
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: food.imageUrl != null && food.imageUrl!.isNotEmpty
+                ? Image.network(
+                    food.imageUrl!,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                  )
+                : _buildPlaceholder(),
           ),
           const SizedBox(width: 12),
 
@@ -1180,15 +1337,18 @@ class _PopularFoodItem extends StatelessWidget {
               children: [
                 Text(
                   food.name,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${food.calories.toInt()} Calo • 100g',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[500],
+                  '${food.calories.toInt()} Cal • 100g',
+                  style: GoogleFonts.inter(
+                    color: Colors.white54,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -1201,15 +1361,28 @@ class _PopularFoodItem extends StatelessWidget {
             child: Container(
               width: 32,
               height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+              decoration: const BoxDecoration(
+                color: _kLime,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add, color: Color(0xFF4CAF50), size: 20),
+              child: const Icon(Icons.add, color: Colors.black, size: 20),
             ),
           ),
         ],
       ),
+    ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(Icons.restaurant, size: 22, color: _kCardBg),
     );
   }
 }
@@ -1219,10 +1392,10 @@ class _PopularFoodItem extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _CollectionsTab extends StatelessWidget {
+  const _CollectionsTab();
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1233,9 +1406,10 @@ class _CollectionsTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Chọn loại bộ sưu tập',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
+                'Select collection type',
+                style: GoogleFonts.inter(
+                  color: Colors.white54,
+                  fontSize: 13,
                 ),
               ),
               Container(
@@ -1244,24 +1418,26 @@ class _CollectionsTab extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: _kCardBg,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _kBorder),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Thực phẩm tự tạo',
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      'My Foods',
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+                        color: Colors.white,
+                        fontSize: 12,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(
+                    const Icon(
                       Icons.keyboard_arrow_down,
                       size: 18,
-                      color: Colors.grey[600],
+                      color: Colors.white54,
                     ),
                   ],
                 ),
@@ -1276,17 +1452,15 @@ class _CollectionsTab extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.collections_bookmark_outlined,
                     size: 64,
-                    color: Colors.grey[300],
+                    color: Colors.white24,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Bạn chưa tạo thực phẩm nào.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[500],
-                    ),
+                    'You have no saved foods yet.',
+                    style: GoogleFonts.inter(color: Colors.white38),
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
@@ -1294,10 +1468,13 @@ class _CollectionsTab extends StatelessWidget {
                       // TODO: Navigate to create food flow
                     },
                     icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Tạo thực phẩm mới'),
+                    label: Text(
+                      'Create New Food',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF4CAF50),
-                      side: const BorderSide(color: Color(0xFF4CAF50)),
+                      foregroundColor: _kLime,
+                      side: const BorderSide(color: _kLime),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -1340,10 +1517,10 @@ class _QuickLogTab extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          _inputField(label: 'Tên thực phẩm', controller: nameCtrl),
+          _inputField(label: 'Food Name', controller: nameCtrl),
           const SizedBox(height: 14),
           _inputField(
-            label: 'Năng lượng (Calo)',
+            label: 'Calories (Cal)',
             controller: calCtrl,
             isNumeric: true,
           ),
@@ -1382,19 +1559,19 @@ class _QuickLogTab extends StatelessWidget {
           // Submit button
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
+            child: FilledButton(
               onPressed: onQuickLog,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF4CAF50),
-                side: const BorderSide(color: Color(0xFF4CAF50)),
+              style: FilledButton.styleFrom(
+                backgroundColor: _kLime,
+                foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Ghi nhanh vào bữa',
-                style: TextStyle(fontWeight: FontWeight.w600),
+              child: Text(
+                'Quick Log',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -1411,20 +1588,23 @@ class _QuickLogTab extends StatelessWidget {
     return TextField(
       controller: controller,
       keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+      style: GoogleFonts.inter(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.grey[500]),
+        labelStyle: GoogleFonts.inter(color: Colors.white38),
+        filled: true,
+        fillColor: _kCardBg,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: const BorderSide(color: _kBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: const BorderSide(color: _kBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4CAF50)),
+          borderSide: const BorderSide(color: _kLime),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,

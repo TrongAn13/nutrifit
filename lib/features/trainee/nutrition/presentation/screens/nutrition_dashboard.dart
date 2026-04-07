@@ -164,12 +164,11 @@ class _NutritionGoalCardState extends State<NutritionGoalCard> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
-            'MỤC TIÊU DINH DƯỠNG',
+            'Nutrition Goal',
             style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 12,
+              color: Colors.white,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
             ),
           ),
         ),
@@ -450,12 +449,11 @@ class MealListSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
-            'BỮA ĂN',
+            'Meals',
             style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 12,
+              color: Colors.white,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
             ),
           ),
         ),
@@ -612,12 +610,11 @@ class WaterAndExerciseSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
-            'UỐNG NƯỚC VÀ VẬN ĐỘNG',
+            'Water and Excercise',
             style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 12,
+              color: Colors.white,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
             ),
           ),
         ),

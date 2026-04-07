@@ -12,6 +12,7 @@ class FoodModel {
   final double protein; // grams
   final double fat; // grams
   final double carbs; // grams
+  final String? imageUrl;
   final bool isSystem;
   final DateTime createdAt;
 
@@ -24,6 +25,7 @@ class FoodModel {
     this.protein = 0,
     this.fat = 0,
     this.carbs = 0,
+    this.imageUrl,
     this.isSystem = false,
     required this.createdAt,
   });
@@ -42,6 +44,7 @@ class FoodModel {
       protein: (json['protein'] as num?)?.toDouble() ?? 0,
       fat: (json['fat'] as num?)?.toDouble() ?? 0,
       carbs: (json['carbs'] as num?)?.toDouble() ?? 0,
+      imageUrl: json['imageUrl'] as String?,
       isSystem: json['isSystem'] as bool? ?? false,
 
       // Xử lý an toàn cho Timestamp phòng trường hợp cache offline bị null
@@ -61,6 +64,7 @@ class FoodModel {
       'protein': protein,
       'fat': fat,
       'carbs': carbs,
+      'imageUrl': imageUrl,
       'isSystem': isSystem,
       'createdAt': Timestamp.fromDate(createdAt),
     };
@@ -77,6 +81,7 @@ class FoodModel {
     double? protein,
     double? fat,
     double? carbs,
+    String? imageUrl,
     bool? isSystem,
     DateTime? createdAt,
   }) {
@@ -89,6 +94,7 @@ class FoodModel {
       protein: protein ?? this.protein,
       fat: fat ?? this.fat,
       carbs: carbs ?? this.carbs,
+      imageUrl: imageUrl ?? this.imageUrl,
       isSystem: isSystem ?? this.isSystem,
       createdAt: createdAt ?? this.createdAt,
     );
