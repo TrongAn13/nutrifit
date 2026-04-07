@@ -27,7 +27,7 @@ class NotificationService {
 
   // ───────────────────────── Permissions ─────────────────────────
 
-  /// Requests notification permission from the user.
+  /// Requests notification permission from the trainee.
   ///
   /// Returns the current [NotificationSettings] after the request.
   Future<NotificationSettings> requestPermission() async {
@@ -59,7 +59,7 @@ class NotificationService {
     FirebaseMessaging.onMessage.listen(onMessage);
   }
 
-  /// Sets up handler for when user taps a notification (app in background).
+  /// Sets up handler for when trainee taps a notification (app in background).
   void configureBackgroundTapHandler({
     required void Function(RemoteMessage message) onMessageOpenedApp,
   }) {

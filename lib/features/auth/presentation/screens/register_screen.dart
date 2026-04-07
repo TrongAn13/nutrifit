@@ -36,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
-  String _selectedRole = 'user'; // 'user' or 'coach'
+  String _selectedRole = 'trainee'; // 'trainee' or 'coach'
 
   @override
   void dispose() {
@@ -85,7 +85,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             );
         }
         if (state is AuthNewlyRegistered) {
-          // New user → go to profile setup flow
+          // New trainee → go to profile setup flow
           context.go(AppRouter.profileSetup);
         } else if (state is AuthAuthenticated) {
           if (state.user.role == 'coach') {
@@ -264,7 +264,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildRoleSelector() {
     return Row(
       children: [
-        Expanded(child: _roleItem('Học viên', 'user')),
+        Expanded(child: _roleItem('Học viên', 'trainee')),
         const SizedBox(width: 12),
         Expanded(child: _roleItem('Huấn luyện viên', 'coach')),
       ],

@@ -56,12 +56,14 @@ dependencies:
   image_picker: ^1.2.1
   firebase_storage: ^12.4.10
   table_calendar: ^3.2.0
+  flutter_staggered_grid_view: ^0.7.0
   percent_indicator: ^4.2.5
   intl: ^0.20.2
   vertical_weight_slider: ^2.6.0
   smooth_page_indicator: ^1.2.0+3
   shared_preferences: ^2.3.4
   flutter_svg: ^2.0.17
+  phosphor_flutter: ^2.1.0
 
 dev_dependencies:
   flutter_test:

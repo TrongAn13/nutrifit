@@ -14,40 +14,42 @@ import '../../features/auth/profile_setup/goal_selection_screen.dart';
 import '../../features/auth/profile_setup/welcome_success_screen.dart';
 import '../../features/onboarding/get_started_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
-import '../../features/user/user_coach/chat_screen.dart';
+import '../../features/trainee/user_coach/chat_screen.dart';
 import '../../features/chat/presentation/chat_room_screen.dart';
 import '../../features/coach/main_nav/coach_main_screen.dart';
 import '../../features/coach/client_detail/client_detail_screen.dart';
-import '../../features/user/user_coach/coach_screen.dart';
-import '../../features/user/user_coach/presentation/notification_screen.dart';
-import '../../features/user/main_nav/screens/main_navigation_screen.dart';
-import '../../features/user/nutrition/data/repositories/nutrition_repository.dart';
-import '../../features/user/nutrition/logic/food_bloc.dart';
-import '../../features/user/nutrition/logic/food_event.dart';
-import '../../features/user/nutrition/logic/nutrition_bloc.dart';
-import '../../features/user/nutrition/logic/nutrition_event.dart';
-import '../../features/user/nutrition/logic/water_cubit.dart';
-import '../../features/user/nutrition/presentation/screens/food_collection_screen.dart';
-import '../../features/user/nutrition/presentation/screens/food_search_screen.dart';
-import '../../features/user/nutrition/presentation/screens/meal_detail_screen.dart';
-import '../../features/user/nutrition/presentation/screens/water_tracking_screen.dart';
-import '../../features/user/workout/data/models/exercise_model.dart';
-import '../../features/user/workout/data/models/routine_model.dart';
-import '../../features/user/workout/data/models/workout_plan_model.dart';
-import '../../features/user/workout/data/repositories/workout_repository.dart';
-import '../../features/user/workout/logic/active_exercise_cubit.dart';
-import '../../features/user/workout/logic/exercise_library_bloc.dart';
-import '../../features/user/workout/logic/exercise_library_event.dart';
-import '../../features/user/workout/logic/plan_detail_cubit.dart';
-import '../../features/user/workout/logic/workout_template_bloc.dart';
-import '../../features/user/workout/logic/workout_template_event.dart';
-import '../../features/user/workout/presentation/screens/active_exercise_detail_screen.dart';
-import '../../features/user/workout/presentation/screens/active_workout_screen.dart';
-import '../../features/user/workout/presentation/screens/create_plan_screen.dart';
-import '../../features/user/workout/presentation/screens/exercise_library_screen.dart';
-import '../../features/user/workout/presentation/screens/plan_detail_screen.dart';
-import '../../features/user/workout/presentation/screens/routine_detail_screen.dart';
-import '../../features/user/workout/presentation/screens/workout_template_list_screen.dart';
+import '../../features/trainee/user_coach/coach_screen.dart';
+import '../../features/trainee/user_coach/presentation/notification_screen.dart';
+import '../../features/trainee/main_nav/screens/main_navigation_screen.dart';
+import '../../features/trainee/dashboard/presentation/screens/trainee_schedule_screen.dart';
+import '../../features/trainee/dashboard/presentation/screens/workout_history_screen.dart';
+import '../../features/trainee/nutrition/data/repositories/nutrition_repository.dart';
+import '../../features/trainee/nutrition/logic/food_bloc.dart';
+import '../../features/trainee/nutrition/logic/food_event.dart';
+import '../../features/trainee/nutrition/logic/nutrition_bloc.dart';
+import '../../features/trainee/nutrition/logic/nutrition_event.dart';
+import '../../features/trainee/nutrition/logic/water_cubit.dart';
+import '../../features/trainee/nutrition/presentation/screens/food_collection_screen.dart';
+import '../../features/trainee/nutrition/presentation/screens/food_search_screen.dart';
+import '../../features/trainee/nutrition/presentation/screens/meal_detail_screen.dart';
+import '../../features/trainee/nutrition/presentation/screens/water_tracking_screen.dart';
+import '../../features/trainee/workout/data/models/exercise_model.dart';
+import '../../features/trainee/workout/data/models/routine_model.dart';
+import '../../features/trainee/workout/data/models/workout_plan_model.dart';
+import '../../features/trainee/workout/data/repositories/workout_repository.dart';
+import '../../features/trainee/workout/logic/active_exercise_cubit.dart';
+import '../../features/trainee/workout/logic/exercise_library_bloc.dart';
+import '../../features/trainee/workout/logic/exercise_library_event.dart';
+import '../../features/trainee/workout/logic/plan_detail_cubit.dart';
+import '../../features/trainee/workout/presentation/screens/active_exercise_detail_screen.dart';
+import '../../features/trainee/workout/presentation/screens/active_workout_screen.dart';
+import '../../features/trainee/workout/presentation/screens/create_plan_screen.dart';
+import '../../features/trainee/workout/presentation/screens/Select_exercise_screen.dart';
+
+import '../../features/trainee/workout/presentation/screens/edit_plan_screen.dart';
+import '../../features/trainee/workout/presentation/screens/routine_detail_screen.dart';
+import '../../shared/Screens/library/user_plans.dart';
+import '../../shared/Screens/plans/user_plan_detail_screen.dart' hide Text;
 
 
 /// Centralized router configuration using [GoRouter].
@@ -73,7 +75,9 @@ class AppRouter {
   // --- Mới: Templates cho HLV ---
   static const String createTemplate = '/create-template';
   static const String workoutTemplates = '/workout-templates';
+  static const String addPlanDetail = '/add-plan-detail';
   static const String planDetail = '/plan-detail';
+  static const String myPlanDetail = '/my-plan-detail';
   static const String exerciseDetail = '/exercise-detail';
   static const String foodCollection = '/food-collection';
   static const String coachMain = '/coach-main';
@@ -84,6 +88,8 @@ class AppRouter {
   static const String profileSetup = '/profile-setup';
   static const String goalSelection = '/goal-selection';
   static const String welcomeSuccess = '/welcome-success';
+  static const String traineeSchedule = '/trainee-schedule';
+  static const String workoutHistory = '/workout-history';
 
   // ───────────────────────── Router Instance ─────────────────────────
 
@@ -106,7 +112,7 @@ class AppRouter {
     );
   }
 
-  /// Global redirect logic based on [AuthBloc] state and user roles.
+  /// Global redirect logic based on [AuthBloc] state and trainee roles.
   static String? _guardRedirect(
     BuildContext context,
     GoRouterState state,
@@ -126,7 +132,7 @@ class AppRouter {
       return null;
     }
 
-    // 2. Newly registered user → allow profile-setup pages only.
+    // 2. Newly registered trainee → allow profile-setup pages only.
     if (authState is AuthNewlyRegistered) {
       if (isOnProfileSetup) return null;
       if (isOnAuthPage || isOnOnboarding) return profileSetup;
@@ -335,14 +341,12 @@ class AppRouter {
       name: 'exerciseLibrary',
       builder: (context, state) {
         final userId = FirebaseAuth.instance.currentUser!.uid;
-        final isSelection =
-            state.uri.queryParameters['mode'] == 'selection';
         return BlocProvider(
           create: (_) => ExerciseLibraryBloc(
             workoutRepository: WorkoutRepository(),
             userId: userId,
           )..add(const ExerciseLibraryLoadRequested()),
-          child: ExerciseLibraryScreen(isSelectionMode: isSelection),
+          child: const SelectExerciseScreen(),
         );
       },
     ),
@@ -352,14 +356,27 @@ class AppRouter {
       builder: (context, state) => const CreatePlanScreen(),
     ),
     GoRoute(
+      path: createTemplate,
+      name: 'createTemplate',
+      builder: (context, state) => const CreatePlanScreen(isTemplate: true),
+    ),
+    GoRoute(
+      path: addPlanDetail,
+      name: 'addPlanDetail',
+      redirect: (context, state) => createPlan,
+    ),
+    GoRoute(
       path: workoutTemplates,
       name: 'workoutTemplates',
-      builder: (context, state) => BlocProvider(
-        create: (_) => WorkoutTemplateBloc(
-          workoutRepository: WorkoutRepository(),
-        )..add(const WorkoutTemplateLoadRequested()),
-        child: const WorkoutTemplateListScreen(),
-      ),
+      builder: (context, state) {
+        final authState = context.read<AuthBloc>().state;
+        final role = authState is AuthAuthenticated &&
+                authState.user.role == 'coach'
+            ? UserPlansRole.coach
+            : UserPlansRole.trainee;
+
+        return WorkoutTemplateListScreen(role: role);
+      },
     ),
     GoRoute(
       path: planDetail,
@@ -371,8 +388,16 @@ class AppRouter {
             workoutRepository: WorkoutRepository(),
             initialPlan: plan,
           ),
-          child: const PlanDetailScreen(),
+          child: const EditPlanScreen(),
         );
+      },
+    ),
+    GoRoute(
+      path: myPlanDetail,
+      name: 'myPlanDetail',
+      builder: (context, state) {
+        final plan = state.extra as WorkoutPlanModel;
+        return MyPlanDetailScreen(plan: plan);
       },
     ),
     GoRoute(
@@ -394,6 +419,16 @@ class AppRouter {
           ),
         );
       },
+    ),
+    GoRoute(
+      path: traineeSchedule,
+      name: 'traineeSchedule',
+      builder: (context, state) => const MyScheduleScreen(),
+    ),
+    GoRoute(
+      path: workoutHistory,
+      name: 'workoutHistory',
+      builder: (context, state) => const WorkoutHistoryScreen(),
     ),
   ];
 }

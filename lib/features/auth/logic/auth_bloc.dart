@@ -35,7 +35,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   // ───────────────────────── Event Handlers ─────────────────────────
 
-  /// Checks if a user is currently signed in and fetches profile.
+  /// Checks if a trainee is currently signed in and fetches profile.
   Future<void> _onCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
@@ -46,7 +46,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
     
-    // Fetch user profile from Firestore to restore role
+    // Fetch trainee profile from Firestore to restore role
     try {
       final doc = await _repo.firestore.collection('users').doc(firebaseUser.uid).get();
       if (doc.exists && doc.data() != null) {
@@ -101,7 +101,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /// Signs the user out.
+  /// Signs the trainee out.
   Future<void> _onLogoutRequested(
     AuthLogoutRequested event,
     Emitter<AuthState> emit,

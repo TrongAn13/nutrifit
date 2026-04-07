@@ -39,7 +39,7 @@ final class AuthUnauthenticated extends AuthState {
 
 /// User just registered and needs to complete profile setup.
 ///
-/// Extends [AuthAuthenticated] so the user is technically signed in,
+/// Extends [AuthAuthenticated] so the trainee is technically signed in,
 /// but the router will redirect to the profile-setup flow.
 final class AuthNewlyRegistered extends AuthAuthenticated {
   const AuthNewlyRegistered(super.user);

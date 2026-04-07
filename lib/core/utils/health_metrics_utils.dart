@@ -72,7 +72,7 @@ class HealthMetricsUtils {
 
   // ───────────────────── Target Calories ─────────────────
 
-  /// Adjusts TDEE based on the user's goal:
+  /// Adjusts TDEE based on the trainee's goal:
   ///   lose_weight  → tdee − 500
   ///   maintain     → tdee
   ///   gain_muscle  → tdee + 500

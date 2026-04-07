@@ -6,7 +6,7 @@ sealed class AuthEvent {
   const AuthEvent();
 }
 
-/// Check if a user is already signed in (on app startup).
+/// Check if a trainee is already signed in (on app startup).
 final class AuthCheckRequested extends AuthEvent {
   const AuthCheckRequested();
 }
@@ -30,7 +30,7 @@ final class AuthRegisterRequested extends AuthEvent {
     required this.email,
     required this.password,
     required this.name,
-    this.role = 'user',
+    this.role = 'trainee',
   });
 }
 

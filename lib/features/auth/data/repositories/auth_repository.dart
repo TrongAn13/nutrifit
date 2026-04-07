@@ -5,7 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/user_model.dart';
 
 /// Handles all authentication logic: sign-up, sign-in, sign-out,
-/// Firestore user profile creation, and FCM token management.
+/// Firestore trainee profile creation, and FCM token management.
 class AuthRepository {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
@@ -22,7 +22,7 @@ class AuthRepository {
   /// Stream of auth state changes (login / logout).
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  /// Currently signed-in Firebase user, or null.
+  /// Currently signed-in Firebase trainee, or null.
   User? get currentUser => _auth.currentUser;
 
   FirebaseFirestore get firestore => _firestore;
@@ -35,10 +35,10 @@ class AuthRepository {
     required String email,
     required String password,
     required String name,
-    String role = 'user',
+    String role = 'trainee',
   }) async {
     try {
-      // 1. Create Firebase Auth user
+      // 1. Create Firebase Auth trainee
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -54,7 +54,7 @@ class AuthRepository {
       // 3. Get FCM token
       final fcmToken = await _getFcmToken();
 
-      // 4. Build user model with role
+      // 4. Build trainee model with role
       final userModel = UserModel(
         uid: firebaseUser.uid,
         email: email,
@@ -63,7 +63,7 @@ class AuthRepository {
         createdAt: DateTime.now(),
       );
 
-      // 5. Write user document to Firestore
+      // 5. Write trainee document to Firestore
       final docData = userModel.toJson();
       if (fcmToken != null) {
         docData['fcmToken'] = fcmToken;
@@ -109,7 +109,7 @@ class AuthRepository {
             .update({'fcmToken': fcmToken});
       }
 
-      // 3. Fetch user profile from Firestore
+      // 3. Fetch trainee profile from Firestore
       final doc =
           await _firestore.collection('users').doc(firebaseUser.uid).get();
 
@@ -138,7 +138,7 @@ class AuthRepository {
 
   // ───────────────────────── Sign Out ─────────────────────────
 
-  /// Signs out the current user.
+  /// Signs out the current trainee.
   Future<void> signOut() async {
     try {
       await _auth.signOut();
@@ -159,7 +159,7 @@ class AuthRepository {
     }
   }
 
-  /// Maps Firebase Auth error codes to user-friendly Vietnamese messages.
+  /// Maps Firebase Auth error codes to trainee-friendly Vietnamese messages.
   String _mapFirebaseAuthError(String code) {
     switch (code) {
       case 'email-already-in-use':
@@ -168,11 +168,11 @@ class AuthRepository {
         return 'Email không hợp lệ.';
       case 'weak-password':
         return 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.';
-      case 'user-not-found':
+      case 'trainee-not-found':
         return 'Không tìm thấy tài khoản với email này.';
       case 'wrong-password':
         return 'Sai mật khẩu. Vui lòng thử lại.';
-      case 'user-disabled':
+      case 'trainee-disabled':
         return 'Tài khoản đã bị vô hiệu hóa.';
       case 'too-many-requests':
         return 'Quá nhiều yêu cầu. Vui lòng thử lại sau.';

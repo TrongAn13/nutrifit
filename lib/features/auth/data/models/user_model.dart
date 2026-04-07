@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Represents a user profile stored in Firestore `users` collection.
+/// Represents a trainee profile stored in Firestore `users` collection.
 class UserModel {
   final String uid;
   final String email;
   final String name;
   final String? avatarUrl;
-  final String role; // e.g. 'user', 'admin', 'trainer'
+  final String role; // e.g. 'trainee', 'admin', 'trainer'
   final bool isSynced;
   final String? phone;
   final DateTime? birthDate;
@@ -30,7 +30,7 @@ class UserModel {
     required this.email,
     required this.name,
     this.avatarUrl,
-    this.role = 'user',
+    this.role = 'trainee',
     this.isSynced = false,
     this.phone,
     this.birthDate,
@@ -58,7 +58,7 @@ class UserModel {
       email: json['email'] as String,
       name: json['name'] as String,
       avatarUrl: json['avatarUrl'] as String?,
-      role: json['role'] as String? ?? 'user',
+      role: json['role'] as String? ?? 'trainee',
       isSynced: json['isSynced'] as bool? ?? false,
       phone: json['phone'] as String?,
       birthDate: json['birthDate'] != null

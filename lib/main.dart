@@ -14,7 +14,7 @@ import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/logic/auth_bloc.dart';
 import 'features/auth/logic/auth_event.dart';
 import 'features/onboarding/onboarding_service.dart';
-import 'features/user/workout/logic/active_workout_cubit.dart';
+import 'features/trainee/workout/logic/active_workout_cubit.dart';
 import 'firebase_options.dart';
 
 /// Application entry point.
