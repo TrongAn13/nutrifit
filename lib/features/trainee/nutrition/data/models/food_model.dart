@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Represents a food item in the Firestore `foods` collection.
+/// Represents a food item in the Firestore `trainee_food` or `foods` collection.
 ///
 /// Foods can be system-provided ([isSystem] = true) or trainee-created.
 class FoodModel {
@@ -14,6 +14,10 @@ class FoodModel {
   final double carbs; // grams
   final String? imageUrl;
   final bool isSystem;
+  final bool isMeal;
+  final String servingType;
+  final double servingWeight;
+  final String unit;
   final DateTime createdAt;
 
   const FoodModel({
@@ -27,6 +31,10 @@ class FoodModel {
     this.carbs = 0,
     this.imageUrl,
     this.isSystem = false,
+    this.isMeal = false,
+    this.servingType = 'khẩu phần',
+    this.servingWeight = 100,
+    this.unit = 'g',
     required this.createdAt,
   });
 
@@ -46,6 +54,10 @@ class FoodModel {
       carbs: (json['carbs'] as num?)?.toDouble() ?? 0,
       imageUrl: json['imageUrl'] as String?,
       isSystem: json['isSystem'] as bool? ?? false,
+      isMeal: json['isMeal'] as bool? ?? false,
+      servingType: json['servingType'] as String? ?? 'khẩu phần',
+      servingWeight: (json['servingWeight'] as num?)?.toDouble() ?? 100,
+      unit: json['unit'] as String? ?? 'g',
 
       // Xử lý an toàn cho Timestamp phòng trường hợp cache offline bị null
       createdAt: json['createdAt'] != null
@@ -66,6 +78,10 @@ class FoodModel {
       'carbs': carbs,
       'imageUrl': imageUrl,
       'isSystem': isSystem,
+      'isMeal': isMeal,
+      'servingType': servingType,
+      'servingWeight': servingWeight,
+      'unit': unit,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -83,6 +99,10 @@ class FoodModel {
     double? carbs,
     String? imageUrl,
     bool? isSystem,
+    bool? isMeal,
+    String? servingType,
+    double? servingWeight,
+    String? unit,
     DateTime? createdAt,
   }) {
     return FoodModel(
@@ -96,6 +116,10 @@ class FoodModel {
       carbs: carbs ?? this.carbs,
       imageUrl: imageUrl ?? this.imageUrl,
       isSystem: isSystem ?? this.isSystem,
+      isMeal: isMeal ?? this.isMeal,
+      servingType: servingType ?? this.servingType,
+      servingWeight: servingWeight ?? this.servingWeight,
+      unit: unit ?? this.unit,
       createdAt: createdAt ?? this.createdAt,
     );
   }

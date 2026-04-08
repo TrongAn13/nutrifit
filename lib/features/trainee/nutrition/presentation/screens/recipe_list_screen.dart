@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../data/models/recipe_model.dart';
 import '../../logic/recipe_cubit.dart';
@@ -186,12 +187,28 @@ class _RecipeListViewState extends State<_RecipeListView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _kBg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 8),
+      appBar: AppBar(
+        backgroundColor: _kBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Icon(PhosphorIcons.caretLeft(), color: Colors.white, size: 20),
+        ),
+        title: Text(
+          widget.sectionTitle,
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
             _buildTabBar(),
             const SizedBox(height: 8),
             Expanded(
@@ -211,46 +228,11 @@ class _RecipeListViewState extends State<_RecipeListView> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
-  // ── Header ──────────────────────────────────────────────────────────────────
+  // ── Tab Bar ──────────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: _kCardBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _kBorder),
-              ),
-              child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              widget.sectionTitle,
-              style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          _IconBtn(icon: Icons.search, onTap: () {}),
-        ],
-      ),
-    );
-  }
 
   // ── Tab bar ──────────────────────────────────────────────────────────────────
 
@@ -275,8 +257,8 @@ class _RecipeListViewState extends State<_RecipeListView> {
               padding: const EdgeInsets.symmetric(horizontal: 14),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isSelected ? _kLime.withOpacity(0.12) : _kSurface,
-                borderRadius: BorderRadius.circular(22),
+                color: _kSurface,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isSelected ? _kLime : _kBorder,
                   width: isSelected ? 1.5 : 1.0,
@@ -295,7 +277,7 @@ class _RecipeListViewState extends State<_RecipeListView> {
                   Text(
                     tab.label,
                     style: GoogleFonts.inter(
-                      color: isSelected ? _kLime : _kTextSecondary,
+                      color: isSelected ? _kLime : Colors.white,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       fontSize: 13,
                     ),
@@ -391,11 +373,11 @@ class _RecipeListViewState extends State<_RecipeListView> {
               Text(
                 'Xem thêm',
                 style: GoogleFonts.inter(
-                  color: _kTextSecondary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  color: _kLime,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
                   decoration: TextDecoration.underline,
-                  decorationColor: _kTextSecondary,
+                  decorationColor: _kLime,
                 ),
               ),
             ],
@@ -470,7 +452,7 @@ class _RecipeListViewState extends State<_RecipeListView> {
                 width: 160,
                 decoration: BoxDecoration(
                   color: _kCardBg,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
@@ -521,7 +503,7 @@ class _RecipeCard extends StatelessWidget {
         width: 160,
         decoration: BoxDecoration(
           color: _kCardBg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(color: _kBorder),
         ),
         child: Column(

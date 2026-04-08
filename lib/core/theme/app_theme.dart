@@ -44,6 +44,7 @@ class AppTheme {
       error: AppColors.error,
     ),
     scaffoldBackgroundColor: AppColors.darkBackground,
+    canvasColor: AppColors.darkBackground,
     textTheme: _buildTextTheme(Brightness.dark),
     appBarTheme: _buildAppBarTheme(Brightness.dark),
     cardTheme: _buildCardTheme(Brightness.dark),

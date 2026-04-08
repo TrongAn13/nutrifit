@@ -398,8 +398,18 @@ class _CalendarMonthGrid extends StatelessWidget {
                   orElse: () => WorkoutHistoryModel(id: '', userId: '', routineName: '', date: DateTime(2000), durationSeconds: 0, restTimeSeconds: 0, caloriesBurned: 0, completionPercentage: 0, totalWeightLifted: 0, totalReps: 0),
                 );
 
-                final bool completed = history.id.isNotEmpty && history.completionPercentage >= 0;
-                final bool skipped = history.id.isNotEmpty && history.completionPercentage == -1.0;
+                final bool hasHistory = history.id.isNotEmpty;
+                final bool completed = hasHistory && history.completionPercentage >= 0.0;
+                final bool explicitSkipped = hasHistory && history.completionPercentage == -1.0;
+                
+                final dateOnly = DateTime(date.year, date.month, date.day);
+                final todayOnly = DateTime(today.year, today.month, today.day);
+                final planStartOnly = plan != null ? DateTime(plan!.createdAt.year, plan!.createdAt.month, plan!.createdAt.day) : DateTime(2000);
+                
+                final bool isPast = dateOnly.isBefore(todayOnly);
+                final bool isAfterStart = !dateOnly.isBefore(planStartOnly);
+                final bool isMissed = isPast && isAfterStart && showRoutines && !completed && !explicitSkipped;
+                final bool skipped = explicitSkipped || isMissed;
 
                 return GestureDetector(
                   onTap: () => onDateSelected(date),
@@ -409,7 +419,7 @@ class _CalendarMonthGrid extends StatelessWidget {
                     isCurrentMonth: isCurrentMonth,
                     isToday: isToday,
                     isSelected: isSelected,
-                    routineNames: showRoutines ? routines : [],
+                    routineNames: (showRoutines && isAfterStart) ? routines : [],
                     isSunday: col == 6,
                     isCompleted: completed,
                     isSkipped: skipped,
@@ -465,10 +475,10 @@ class _CalendarDayCell extends StatelessWidget {
 
     return Container(
       height: 70, // Slightly smaller height
-      padding: const EdgeInsets.fromLTRB(2, 4, 2, 2),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: isSelected ? _kLime.withValues(alpha: 0.2) : (isToday ? Colors.white.withValues(alpha: 0.05) : Colors.transparent),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.transparent,
+        border: isSelected ? Border.all(color: _kLime, width: 1.5) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -479,16 +489,15 @@ class _CalendarDayCell extends StatelessWidget {
             height: 24,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isSelected ? _kLime : Colors.transparent,
-              border: isToday && !isSelected ? Border.all(color: _kLime) : null,
+              color: isToday ? _kLime : Colors.transparent,
             ),
             child: Center(
               child: Text(
                 '$day',
                 style: GoogleFonts.inter(
-                  color: isSelected ? Colors.black : numColor,
+                  color: isToday ? Colors.black : (isCurrentMonth ? Colors.white : Colors.white30),
                   fontSize: 13,
-                  fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
             ),
@@ -1108,8 +1117,19 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     {
         final histories = widget.histories;
         final todayHistory = _findTodayHistory(histories, todayRoutine!);
-        final bool hasResult = todayHistory != null && todayHistory.completionPercentage >= 0;
-        final bool isSkipped = todayHistory != null && todayHistory.completionPercentage == -1.0;
+        final bool hasResult = todayHistory != null && todayHistory.completionPercentage >= 0.0;
+        final bool explicitSkipped = todayHistory != null && todayHistory.completionPercentage == -1.0;
+        
+        final selectedDateOnly = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
+        final now = DateTime.now();
+        final todayOnly = DateTime(now.year, now.month, now.day);
+        final planStartOnly = DateTime(widget.plan.createdAt.year, widget.plan.createdAt.month, widget.plan.createdAt.day);
+        
+        final bool isPast = selectedDateOnly.isBefore(todayOnly);
+        final bool isAfterStart = !selectedDateOnly.isBefore(planStartOnly);
+        final bool isMissed = isPast && isAfterStart && !hasResult && !explicitSkipped;
+        
+        final bool isSkipped = explicitSkipped || isMissed;
 
         return GestureDetector(
           onTap: () => (isSkipped) ? _showRecordMenu(todayRoutine!, todayHistory) : _openRoutine(todayRoutine!, todayHistory),
@@ -1161,7 +1181,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                       Text(
                         todayRoutine.name,
                         style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: isSkipped ? _kSkipRed : Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),

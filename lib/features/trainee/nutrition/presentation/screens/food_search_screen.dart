@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'barcode_scanner_screen.dart';
 import 'food_detail_screen.dart';
+import 'components/food_quick_view_sheet.dart';
 
 import '../../data/models/food_model.dart';
 import '../../data/repositories/nutrition_repository.dart';
@@ -616,16 +617,18 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     }
   }
 
-  /// Opens [FoodDetailScreen] for preview. If user presses "Log",
-  /// the returned [FoodModel] is added to the cart.
+  /// Opens [FoodQuickViewSheet] for preview and quick log.
+  /// If the user clicks on the name, it navigates to [FoodDetailScreen].
+  /// If the user logs the food (returns a FoodModel), it is added to the cart.
   void _openFoodDetail(FoodModel food) async {
-    final result = await Navigator.of(context).push<FoodModel>(
-      MaterialPageRoute(
-        builder: (_) => FoodDetailScreen(
-          food: food,
-          mealName: _currentMealName,
-          date: widget.date,
-        ),
+    final result = await showModalBottomSheet<FoodModel>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => FoodQuickViewSheet(
+        food: food,
+        mealName: _currentMealName,
+        date: widget.date,
       ),
     );
 

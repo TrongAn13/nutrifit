@@ -15,17 +15,16 @@ import 'muscle_group_screen.dart';
 // Design Tokens
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Color _kTitleDark = Color(0xFF2A327D);
-const Color _kPrimary = Color(0xFF4A55A2);
-const Color _kPrimaryLight = Color(0xFFEDE9FF);
-const Color _kBg = Color(0xFFFAFAFA);
+const Color _kBg = Color(0xFF000000);
+const Color _kCardBg = Color(0xFF121212);
+const Color _kLime = Color(0xFFE2FF54);
 const List<Color> _kPlanCardColors = [
-  Color(0xFFE8EDFF),
-  Color(0xFFE8F5E9),
-  Color(0xFFFFF3E0),
-  Color(0xFFFCE4EC),
-  Color(0xFFE0F7FA),
-  Color(0xFFF3E5F5),
+  Color(0xFF2A2A2A),
+  Color(0xFF333333),
+  Color(0xFF222222),
+  Color(0xFF1A1A1A),
+  Color(0xFF2E2E2E),
+  Color(0xFF1F1F1F),
 ];
 
 /// Coach Library Screen — Tab 3 in CoachMainScreen.
@@ -43,9 +42,6 @@ class CoachLibraryScreen extends StatefulWidget {
 
 class _CoachLibraryScreenState extends State<CoachLibraryScreen> {
   final _workoutRepo = WorkoutRepository();
-
-  /// 0 = Tập luyện, 1 = Dinh dưỡng
-  int _planToggle = 0;
 
   Future<List<WorkoutPlanModel>> _getMyLibraryPlans() async {
     final authState = context.read<AuthBloc>().state;
@@ -66,11 +62,11 @@ class _CoachLibraryScreenState extends State<CoachLibraryScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Thư viện giáo án',
+          'Explore',
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: Colors.black,
+            color: Colors.white,
           ),
         ),
       ),
@@ -96,63 +92,28 @@ class _CoachLibraryScreenState extends State<CoachLibraryScreen> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Section 1: Main Library Grid (Hybrid Layout)
+  // Section 1: Main Library Grid (Horizontal Cards)
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildMainLibraryList() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
       children: [
-        // Left Column: Wide rectangles
-        Expanded(
-          flex: 5,
-          child: Column(
-            children: [
-              _HybridGridCard(
-                title: 'Giáo án tập luyện',
-                subtitle: 'LỘ TRÌNH CHUYÊN SÂU',
-                imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&h=300&fit=crop',
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SystemPlansScreen()));
-                },
-              ),
-              const SizedBox(height: 16),
-              _HybridGridCard(
-                title: 'Giáo án dinh dưỡng',
-                subtitle: 'KETO, CLEAN & HEALTHY',
-                imageUrl: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&h=300&fit=crop',
-                onTap: () {},
-              ),
-            ],
-          ),
+        _HybridGridCard(
+          title: 'Giáo án tập',
+          subtitle: 'LỘ TRÌNH',
+          imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&h=300&fit=crop',
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const SystemPlansScreen()));
+          },
         ),
-        const SizedBox(width: 16),
-        // Right Column: Squares
-        Expanded(
-          flex: 3,
-          child: Column(
-            children: [
-              _HybridGridCard(
-                title: 'Kho bài tập',
-                subtitle: '500+ Bài tập chuẩn hóa',
-                imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&h=300&fit=crop',
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryScreen()));
-                },
-              ),
-              const SizedBox(height: 16),
-              _HybridGridCard(
-                title: 'Kho Dinh dưỡng',
-                subtitle: 'Tra cứu Calo & Macros',
-                imageUrl: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&h=300&fit=crop',
-                onTap: () {
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(const SnackBar(content: Text('Tính năng đang phát triển')));
-                },
-              ),
-            ],
-          ),
+        const SizedBox(height: 16),
+        _HybridGridCard(
+          title: 'Kho bài tập',
+          subtitle: '500+ BÀI TẬP',
+          imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&h=300&fit=crop',
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ExerciseLibraryScreen()));
+          },
         ),
       ],
     );
@@ -172,7 +133,7 @@ class _CoachLibraryScreenState extends State<CoachLibraryScreen> {
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: Colors.black87,
+            color: Colors.white,
           ),
         ),
         InkWell(
@@ -186,7 +147,7 @@ class _CoachLibraryScreenState extends State<CoachLibraryScreen> {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: _kLime,
             ),
           ),
         ),
@@ -528,7 +489,7 @@ class _MyPlanPreviewCard extends StatelessWidget {
     final fallbackColor =
         _kPlanCardColors[plan.name.length % _kPlanCardColors.length];
     final subtitle =
-        '${plan.totalWeeks} tuần • ${plan.sessionsPerWeek} buổi/tuần • ${plan.level}';
+        '${plan.totalWeeks} tuần • ${plan.sessionsPerWeek} buổi/tuần';
 
     return GestureDetector(
       onTap: onTap,
@@ -551,7 +512,7 @@ class _MyPlanPreviewCard extends StatelessWidget {
                       child: Icon(
                         Icons.fitness_center_rounded,
                         size: 50,
-                        color: Colors.black.withAlpha(30),
+                        color: Colors.white.withAlpha(50),
                       ),
                     ),
                   )
@@ -559,7 +520,7 @@ class _MyPlanPreviewCard extends StatelessWidget {
                     child: Icon(
                       Icons.fitness_center_rounded,
                       size: 50,
-                      color: Colors.black.withAlpha(30),
+                      color: Colors.white.withAlpha(50),
                     ),
                   ),
           ),
@@ -569,7 +530,7 @@ class _MyPlanPreviewCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Colors.black,
+              color: Colors.white,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -581,7 +542,7 @@ class _MyPlanPreviewCard extends StatelessWidget {
               subtitle,
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: Colors.grey.shade500,
+                color: Color(0xFFF4CB43),
                 fontWeight: FontWeight.w400,
               ),
               maxLines: 1,

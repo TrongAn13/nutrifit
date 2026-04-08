@@ -17,8 +17,8 @@ sealed class AppColors {
   static const Color lightOutline = Color(0xFFE0E0E0);
 
   // ──────────────────── Dark theme ────────────────────
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1E1E2C);
+  static const Color darkBackground = Color(0xFF060708);
+  static const Color darkSurface = Color(0xFF1A1D23);
   static const Color darkOnBackground = Color(0xFFF1F1F1);
   static const Color darkOnSurface = Color(0xFFE0E0E0);
   static const Color darkOutline = Color(0xFF3A3A4A);

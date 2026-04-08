@@ -774,7 +774,7 @@ class _DynamicCalendarGrid extends StatelessWidget {
                     h.date.year == date.year &&
                     h.date.month == date.month &&
                     h.date.day == date.day &&
-                    h.completionPercentage != -1.0
+                    h.completionPercentage >= 0.0
                   ).firstOrNull;
 
                   final skipHistory = histories.where((h) =>
@@ -785,9 +785,24 @@ class _DynamicCalendarGrid extends StatelessWidget {
                   ).firstOrNull;
 
                   final isCompleted = history != null;
-                  final isSkipped = skipHistory != null;
+                  final explicitSkipped = skipHistory != null;
                   final isToday = date == today;
-                  final isScheduled = plan?.trainingDays.contains(date.weekday) ?? false;
+                  
+                  bool isAfterStart = true;
+                  if (plan != null) {
+                    final planStartOnly = DateTime(plan!.createdAt.year, plan!.createdAt.month, plan!.createdAt.day);
+                    isAfterStart = !date.isBefore(planStartOnly);
+                  }
+
+                  final isScheduled = (plan?.trainingDays.contains(date.weekday) ?? false) && isAfterStart;
+                  
+                  bool isMissed = false;
+                  if (plan != null) {
+                    final isPast = date.isBefore(today);
+                    isMissed = isPast && isAfterStart && isScheduled && !isCompleted && !explicitSkipped;
+                  }
+                  
+                  final isSkipped = explicitSkipped || isMissed;
 
                   return Expanded(
                     child: Padding(
