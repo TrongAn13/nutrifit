@@ -124,9 +124,14 @@ class MealDetailScreen extends StatelessWidget {
 
               // ── Bottom Bar ──
               _BottomAddBar(
-                onTap: () => context.push(
-                  '/food-library?mealName=${Uri.encodeComponent(mealName)}&date=${date.toIso8601String()}',
-                ),
+                onTap: () async {
+                  await context.push(
+                    '/food-library?mealName=${Uri.encodeComponent(mealName)}&date=${date.toIso8601String()}',
+                  );
+                  if (context.mounted) {
+                    context.read<NutritionBloc>().add(NutritionLoadRequested(date));
+                  }
+                },
               ),
             ],
           );

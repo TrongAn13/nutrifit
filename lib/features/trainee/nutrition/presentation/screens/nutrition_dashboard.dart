@@ -572,24 +572,63 @@ class _MealCard extends StatelessWidget {
 
   /// Handle tap on the meal card body
   void _handleCardTap(BuildContext context) async {
-    final now = DateTime.now();
+    final state = context.read<NutritionBloc>().state;
+    DateTime mealDate = DateTime.now();
+    if (state is NutritionLoaded) {
+      mealDate = state.selectedDate;
+    }
+
     if (meal.consumedCalories > 0) {
       await context.push<dynamic>(
-        '/meal-detail?mealName=${Uri.encodeComponent(meal.name)}&date=${now.toIso8601String()}',
+        '/meal-detail?mealName=${Uri.encodeComponent(meal.name)}&date=${mealDate.toIso8601String()}',
       );
+      if (context.mounted) {
+        context.read<NutritionBloc>().add(NutritionLoadRequested(mealDate));
+      }
     } else {
-      await context.push<dynamic>(
-        '/food-library?mealName=${Uri.encodeComponent(meal.name)}&date=${now.toIso8601String()}',
+      final result = await context.push<dynamic>(
+        '/food-library?mealName=${Uri.encodeComponent(meal.name)}&date=${mealDate.toIso8601String()}',
       );
+      
+      if (context.mounted) {
+        context.read<NutritionBloc>().add(NutritionLoadRequested(mealDate));
+        
+        if (result == 'go_to_meal_detail') {
+          await context.push<dynamic>(
+            '/meal-detail?mealName=${Uri.encodeComponent(meal.name)}&date=${mealDate.toIso8601String()}',
+          );
+          if (context.mounted) {
+            context.read<NutritionBloc>().add(NutritionLoadRequested(mealDate));
+          }
+        }
+      }
     }
   }
 
   /// Navigate to the Food Search screen for this meal type.
   void _openFoodLibrary(BuildContext context) async {
-    final now = DateTime.now();
-    await context.push<dynamic>(
-      '/food-library?mealName=${Uri.encodeComponent(meal.name)}&date=${now.toIso8601String()}',
+    final state = context.read<NutritionBloc>().state;
+    DateTime mealDate = DateTime.now();
+    if (state is NutritionLoaded) {
+      mealDate = state.selectedDate;
+    }
+
+    final result = await context.push<dynamic>(
+      '/food-library?mealName=${Uri.encodeComponent(meal.name)}&date=${mealDate.toIso8601String()}',
     );
+
+    if (context.mounted) {
+      context.read<NutritionBloc>().add(NutritionLoadRequested(mealDate));
+      
+      if (result == 'go_to_meal_detail') {
+        await context.push<dynamic>(
+          '/meal-detail?mealName=${Uri.encodeComponent(meal.name)}&date=${mealDate.toIso8601String()}',
+        );
+        if (context.mounted) {
+          context.read<NutritionBloc>().add(NutritionLoadRequested(mealDate));
+        }
+      }
+    }
   }
 }
 
@@ -941,9 +980,7 @@ class NutritionQuickLinksWidget extends StatelessWidget {
           child: _QuickLinkCard(
             icon: Icons.menu_book_rounded,
             label: 'Công thức',
-            onTap: () {
-              // TODO: Navigate to recipes
-            },
+            onTap: () => context.push('/recipes'),
           ),
         ),
         const SizedBox(width: 12),

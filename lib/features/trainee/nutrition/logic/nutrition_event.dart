@@ -19,8 +19,9 @@ final class NutritionLoadRequested extends NutritionEvent {
 /// Add a meal entry to the current day's daily log.
 final class NutritionMealAdded extends NutritionEvent {
   final MealEntry mealEntry;
+  final DateTime? date;
 
-  const NutritionMealAdded(this.mealEntry);
+  const NutritionMealAdded(this.mealEntry, {this.date});
 }
 
 /// Remove a meal entry from a specific day's log.
@@ -34,8 +35,9 @@ final class NutritionMealDeleted extends NutritionEvent {
 /// Add multiple meal entries at once (avoids race conditions).
 final class NutritionMealsAdded extends NutritionEvent {
   final List<MealEntry> entries;
+  final DateTime? date;
 
-  const NutritionMealsAdded(this.entries);
+  const NutritionMealsAdded(this.entries, {this.date});
 }
 
 /// Clone a system nutrition plan and apply it as the trainee's active plan.

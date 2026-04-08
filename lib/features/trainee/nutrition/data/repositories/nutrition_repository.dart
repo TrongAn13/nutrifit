@@ -64,31 +64,32 @@ class NutritionRepository {
   ///
   /// If no daily log exists for today, creates one with the entry.
   /// Also recalculates macro totals after adding.
-  Future<DailyLogModel> addMealEntry(MealEntry entry) async {
-    return addMealEntries([entry]);
+  Future<DailyLogModel> addMealEntry(MealEntry entry, {DateTime? date}) async {
+    return addMealEntries([entry], date: date);
   }
 
   /// Adds multiple [MealEntry] items to today's daily log in a single write.
   ///
   /// Avoids race conditions from multiple concurrent single-entry writes.
-  Future<DailyLogModel> addMealEntries(List<MealEntry> entries) async {
+  Future<DailyLogModel> addMealEntries(List<MealEntry> entries, {DateTime? date}) async {
+    final targetDate = date ?? DateTime.now();
+
     if (entries.isEmpty) {
-      final existing = await getDailyLog(DateTime.now());
+      final existing = await getDailyLog(targetDate);
       if (existing != null) return existing;
       throw Exception('Không có món ăn để thêm.');
     }
 
     try {
-      final today = DateTime.now();
-      DailyLogModel? log = await getDailyLog(today);
+      DailyLogModel? log = await getDailyLog(targetDate);
 
       if (log == null) {
         final logId =
-            '${_uid}_${today.year}${today.month.toString().padLeft(2, '0')}${today.day.toString().padLeft(2, '0')}';
+            '${_uid}_${targetDate.year}${targetDate.month.toString().padLeft(2, '0')}${targetDate.day.toString().padLeft(2, '0')}';
         log = DailyLogModel(
           logId: logId,
           userId: _uid,
-          date: DateTime(today.year, today.month, today.day),
+          date: DateTime(targetDate.year, targetDate.month, targetDate.day),
           meals: entries,
           totalCaloriesIn: entries.fold<double>(0.0, (s, m) => s + m.calories),
           totalProtein: entries.fold<double>(0.0, (s, m) => s + m.protein),

@@ -32,6 +32,7 @@ import '../../features/trainee/nutrition/logic/water_cubit.dart';
 import '../../features/trainee/nutrition/presentation/screens/food_collection_screen.dart';
 import '../../features/trainee/nutrition/presentation/screens/food_search_screen.dart';
 import '../../features/trainee/nutrition/presentation/screens/meal_detail_screen.dart';
+import '../../features/trainee/nutrition/presentation/screens/recipe_browse_screen.dart';
 import '../../features/trainee/nutrition/presentation/screens/water_tracking_screen.dart';
 import '../../features/trainee/workout/data/models/exercise_model.dart';
 import '../../features/trainee/workout/data/models/routine_model.dart';
@@ -80,6 +81,7 @@ class AppRouter {
   static const String myPlanDetail = '/my-plan-detail';
   static const String exerciseDetail = '/exercise-detail';
   static const String foodCollection = '/food-collection';
+  static const String recipes = '/recipes';
   static const String coachMain = '/coach-main';
   static const String clientDetail = '/client-detail';
   static const String notifications = '/notifications';
@@ -316,6 +318,11 @@ class AppRouter {
       path: foodCollection,
       name: 'foodCollection',
       builder: (context, state) => const FoodCollectionScreen(),
+    ),
+    GoRoute(
+      path: recipes,
+      name: 'recipes',
+      builder: (context, state) => const RecipeBrowseScreen(),
     ),
     GoRoute(
       path: routineDetail,

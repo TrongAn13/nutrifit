@@ -131,7 +131,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
       fat: food.fat,
       carbs: food.carbs,
     );
-    context.read<NutritionBloc>().add(NutritionMealAdded(entry));
+    context.read<NutritionBloc>().add(NutritionMealAdded(entry, date: widget.date));
 
     // Keep it in the cart with #SAVED# category so it can be un-added from the cart
     // and won't be saved again by _saveFoods.
@@ -198,7 +198,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     if (allEntries.isEmpty) return;
 
     try {
-      await NutritionRepository().addMealEntries(allEntries);
+      await NutritionRepository().addMealEntries(allEntries, date: widget.date);
       for (final list in _selectedFoodsByMeal.values) {
         list.clear();
       }
@@ -225,10 +225,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     await _saveFoods();
 
     if (context.mounted) {
-      // Navigate to MealDetailScreen, replacing this route
-      context.pushReplacement(
-        '/meal-detail?mealName=${Uri.encodeComponent(_currentMealName)}&date=${widget.date.toIso8601String()}',
-      );
+      context.pop('go_to_meal_detail');
     }
   }
 

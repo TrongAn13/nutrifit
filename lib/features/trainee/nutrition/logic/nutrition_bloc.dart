@@ -53,7 +53,7 @@ class NutritionBloc extends Bloc<NutritionEvent, NutritionState> {
     Emitter<NutritionState> emit,
   ) async {
     try {
-      final updatedLog = await _repo.addMealEntry(event.mealEntry);
+      final updatedLog = await _repo.addMealEntry(event.mealEntry, date: event.date);
       // Preserve trainee from current state
       final currentUser = state is NutritionLoaded
           ? (state as NutritionLoaded).user
@@ -76,7 +76,7 @@ class NutritionBloc extends Bloc<NutritionEvent, NutritionState> {
     Emitter<NutritionState> emit,
   ) async {
     try {
-      final updatedLog = await _repo.addMealEntries(event.entries);
+      final updatedLog = await _repo.addMealEntries(event.entries, date: event.date);
       final currentUser = state is NutritionLoaded
           ? (state as NutritionLoaded).user
           : null;
