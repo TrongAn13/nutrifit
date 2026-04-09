@@ -3,13 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nutrifit/features/trainee/nutrition/presentation/screens/create_food_step1_screen.dart';
+import '../../logic/nutrition_bloc.dart';
+import '../../logic/nutrition_event.dart';
 
 import '../../data/models/recipe_model.dart';
 import '../../data/models/food_model.dart';
 import 'recipe_detail_screen.dart';
 import 'components/food_quick_view_sheet.dart';
 import 'recipe_favorite_store.dart';
+import '../../data/repositories/nutrition_repository.dart';
+import '../../../tracking/data/models/daily_log_model.dart';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 const Color _kBg = Color(0xFF060708);
@@ -582,8 +587,207 @@ class _FoodCard extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => FoodQuickViewSheet(food: food),
+      builder: (_) => FoodQuickViewSheet(
+        food: food,
+        onDirectSave: (adjusted, mealName, date) async {
+          const mealKeyMap = {
+            'Bữa sáng': 'breakfast',
+            'Bữa trưa': 'lunch',
+            'Bữa tối': 'dinner',
+            'Bữa phụ': 'snack',
+          };
+          final mealKey = mealKeyMap[mealName] ?? 'snack';
+          final mealId = 'meal_${DateTime.now().millisecondsSinceEpoch}_${adjusted.foodId}';
+          final entry = MealEntry(
+            mealId: mealId,
+            mealType: mealKey,
+            name: adjusted.name,
+            calories: adjusted.calories,
+            protein: adjusted.protein,
+            fat: adjusted.fat,
+            carbs: adjusted.carbs,
+          );
+          try {
+            // Use NutritionBloc if available so dashboard auto-refreshes
+            try {
+              final bloc = context.read<NutritionBloc>();
+              bloc.add(NutritionMealAdded(entry, date: date));
+            } catch (_) {
+              // Bloc not in widget tree — save directly via repository
+              await NutritionRepository().addMealEntries([entry], date: date);
+            }
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: _kCardBg,
+                  content: Text(
+                    'Added "${adjusted.name}" to $mealName successfully!',
+                    style: GoogleFonts.inter(color: _kLime),
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Error saving food from collection: $e');
+          }
+        },
+      ),
     );
+  }
+
+  void _showOptionsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF12141A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            // Title row with close button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  const SizedBox(width: 48), // Balance the close button
+                  Expanded(
+                    child: Text(
+                      'Tùy chỉnh',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(sheetCtx),
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 16),
+                      child: Icon(Icons.close, color: Colors.white54, size: 22),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+            // Edit option
+            ListTile(
+              leading: Icon(PhosphorIcons.pencilSimple(), color: Colors.white, size: 22),
+              title: Text(
+                'Chỉnh sửa dữ liệu',
+                style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+              ),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _navigateToEdit(context);
+              },
+            ),
+            Divider(height: 1, color: Colors.white.withValues(alpha: 0.06), indent: 56),
+            // Delete option
+            ListTile(
+              leading: Icon(PhosphorIcons.trash(), color: Colors.redAccent, size: 22),
+              title: Text(
+                'Xóa khỏi bộ sưu tập',
+                style: GoogleFonts.inter(color: Colors.redAccent, fontSize: 15),
+              ),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _confirmDelete(context);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToEdit(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateFoodStep1Screen(
+          isMeal: food.isMeal,
+          existingFood: food,
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _kCardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Xác nhận xóa',
+          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Bạn có chắc muốn xóa "${food.name}" khỏi bộ sưu tập?',
+          style: GoogleFonts.inter(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Hủy', style: GoogleFonts.inter(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _deleteFood(context);
+            },
+            child: Text('Xóa', style: GoogleFonts.inter(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteFood(BuildContext context) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('trainee_food')
+          .doc(food.foodId)
+          .delete();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: _kCardBg,
+            content: Text(
+              'Đã xóa "${food.name}" khỏi bộ sưu tập.',
+              style: GoogleFonts.inter(color: _kLime),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error deleting food: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.redAccent,
+            content: Text('Lỗi khi xóa: $e', style: GoogleFonts.inter(color: Colors.white)),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -601,9 +805,31 @@ class _FoodCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: food.imageUrl != null && food.imageUrl!.isNotEmpty
-                  ? Image.network(food.imageUrl!, fit: BoxFit.cover)
-                  : const _EmojiPlaceholder(emoji: '🍽️'),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  food.imageUrl != null && food.imageUrl!.isNotEmpty
+                      ? Image.network(food.imageUrl!, fit: BoxFit.cover)
+                      : const _EmojiPlaceholder(emoji: '🍽️'),
+                  // 3-dot menu button
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => _showOptionsSheet(context),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(PhosphorIcons.dotsThreeVertical(), color: Colors.white, size: 15),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),

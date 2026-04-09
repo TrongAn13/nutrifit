@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'barcode_scanner_screen.dart';
 import 'food_detail_screen.dart';
@@ -15,6 +17,8 @@ import '../../logic/nutrition_bloc.dart';
 import '../../logic/nutrition_event.dart';
 import '../../logic/nutrition_state.dart';
 import '../../../tracking/data/models/daily_log_model.dart';
+import '../../data/models/recipe_model.dart';
+import 'recipe_favorite_store.dart';
 
 // ── Dark theme constants ──
 const Color _kBg = Color(0xFF060708);
@@ -306,7 +310,10 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
                         );
                       },
                     ),
-                    const _CollectionsTab(),
+                    _CollectionsTab(
+                      onAddFood: _addToCart,
+                      onFoodTap: _openFoodDetail,
+                    ),
                     _QuickLogTab(
                       nameCtrl: _quickNameCtrl,
                       calCtrl: _quickCalCtrl,
@@ -860,7 +867,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(10),
                               border: isSelected
-                                  ? Border.all(color: _kLime.withValues(alpha: 0.3))
+                                  ? Border.all(color: _kLime.withOpacity(0.3))
                                   : null,
                             ),
                             child: Row(
@@ -944,7 +951,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                         ),
                         Divider(
                           height: 1,
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: Colors.white.withOpacity(0.08),
                         ),
 
                         // Food list or empty state
@@ -978,7 +985,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                                   separatorBuilder: (_, __) => Divider(
                                     height: 1,
                                     color:
-                                        Colors.white.withValues(alpha: 0.06),
+                                        Colors.white.withOpacity(0.06),
                                   ),
                                   itemBuilder: (_, index) {
                                     final food = _currentList[index];
@@ -1111,7 +1118,7 @@ class _RecentTab extends StatelessWidget {
           itemCount: recentMeals.length,
           separatorBuilder: (context, index) => Divider(
             height: 1,
-            color: Colors.white.withValues(alpha: 0.06),
+            color: Colors.white.withOpacity(0.06),
           ),
           itemBuilder: (context, index) {
             final meal = recentMeals[index];
@@ -1228,7 +1235,7 @@ class _PopularTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       border: isSelected
                           ? Border.all(
-                              color: _kLime.withValues(alpha: 0.3),
+                              color: _kLime.withOpacity(0.3),
                             )
                           : null,
                     ),
@@ -1252,7 +1259,7 @@ class _PopularTab extends StatelessWidget {
         // Vertical divider
         Container(
           width: 0.5,
-          color: Colors.white.withValues(alpha: 0.08),
+          color: Colors.white.withOpacity(0.08),
         ),
 
         // ── Food list ──
@@ -1391,98 +1398,260 @@ class _PopularFoodItem extends StatelessWidget {
 // Tab 3 — Collections
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class _CollectionsTab extends StatelessWidget {
-  const _CollectionsTab();
+class _CollectionsTab extends StatefulWidget {
+  final ValueChanged<FoodModel> onAddFood;
+  final ValueChanged<FoodModel> onFoodTap;
+
+  const _CollectionsTab({
+    required this.onAddFood,
+    required this.onFoodTap,
+  });
+
+  @override
+  State<_CollectionsTab> createState() => _CollectionsTabState();
+}
+
+class _CollectionsTabState extends State<_CollectionsTab> {
+  int _selectedType = 0;
+
+  static const _typeLabels = [
+    'Thực phẩm tự tạo',
+    'Công thức yêu thích',
+    'Thực phẩm đã scan',
+  ];
+
+  static const _typeIcons = [
+    Icons.restaurant_outlined,
+    Icons.bookmark_outline,
+    Icons.qr_code_scanner,
+  ];
+
+  String? get _currentUserId => FirebaseAuth.instance.currentUser?.uid;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Select collection type',
-                style: GoogleFonts.inter(
-                  color: Colors.white54,
-                  fontSize: 13,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: _kCardBg,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _kBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'My Foods',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                        fontSize: 12,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Filter chips (scrollable) ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: SizedBox(
+            height: 36,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _typeLabels.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                final isActive = i == _selectedType;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedType = i),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isActive ? _kLime.withOpacity(0.15) : _kCardBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isActive ? _kLime : _kBorder,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 18,
-                      color: Colors.white54,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Empty state
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.collections_bookmark_outlined,
-                    size: 64,
-                    color: Colors.white24,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'You have no saved foods yet.',
-                    style: GoogleFonts.inter(color: Colors.white38),
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Navigate to create food flow
-                    },
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(
-                      'Create New Food',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _kLime,
-                      side: const BorderSide(color: _kLime),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _typeIcons[i],
+                          size: 14,
+                          color: isActive ? _kLime : Colors.white54,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _typeLabels[i],
+                          style: GoogleFonts.inter(
+                            color: isActive ? _kLime : Colors.white54,
+                            fontSize: 12,
+                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // ── Body ──
+        Expanded(child: _buildBody()),
+      ],
+    );
+  }
+
+  Widget _buildBody() {
+    switch (_selectedType) {
+      case 0:
+        return _buildCustomFoods();
+      case 1:
+        return _buildFavoriteRecipes();
+      default:
+        return _buildEmpty('No scanned items yet.');
+    }
+  }
+
+  Widget _buildCustomFoods() {
+    final userId = _currentUserId;
+    if (userId == null) return _buildEmpty('Please sign in to view saved foods.');
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('trainee_food')
+          .where('userId', isEqualTo: userId)
+          .where('isMeal', isEqualTo: false)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: _kLime));
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _buildEmpty('No custom foods yet.');
+        }
+        final foods = snapshot.data!.docs.map((doc) {
+          return FoodModel.fromJson(doc.data() as Map<String, dynamic>);
+        }).toList();
+        return _buildFoodList(foods);
+      },
+    );
+  }
+
+  Widget _buildFavoriteRecipes() {
+    return ValueListenableBuilder<Map<String, RecipeModel>>(
+      valueListenable: RecipeFavoriteStore.favorites,
+      builder: (context, favMap, _) {
+        if (favMap.isEmpty) {
+          return _buildEmpty('No favorite recipes yet.');
+        }
+        final foods = favMap.values.map((r) => FoodModel(
+          foodId: r.recipeId,
+          name: r.name,
+          category: 'Recipe',
+          calories: r.calories,
+          protein: r.protein,
+          fat: r.fat,
+          carbs: r.carbs,
+          imageUrl: r.imageUrl,
+          createdAt: DateTime.now(),
+        )).toList();
+        return _buildFoodList(foods);
+      },
+    );
+  }
+
+  Widget _buildFoodList(List<FoodModel> foods) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      itemCount: foods.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (_, i) {
+        final food = foods[i];
+        return GestureDetector(
+          onTap: () => widget.onFoodTap(food),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: _kCardBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _kBorder),
+            ),
+            child: Row(
+              children: [
+                // Thumbnail
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: food.imageUrl != null && food.imageUrl!.isNotEmpty
+                      ? Image.network(
+                          food.imageUrl!,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                        )
+                      : _buildPlaceholder(),
+                ),
+                const SizedBox(width: 12),
+                // Name & calories
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        food.name,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${food.calories.toInt()} Cal • 1 ${food.servingType}',
+                        style: GoogleFonts.inter(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Add button
+                GestureDetector(
+                  onTap: () => widget.onAddFood(food),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      color: _kLime,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add, color: Colors.black, size: 20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(Icons.restaurant, size: 22, color: _kCardBg),
+    );
+  }
+
+  Widget _buildEmpty(String message) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.collections_bookmark_outlined,
+            size: 48,
+            color: Colors.white24,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: GoogleFonts.inter(color: Colors.white38),
           ),
         ],
       ),

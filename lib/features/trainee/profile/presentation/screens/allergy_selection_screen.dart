@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../../core/theme/app_colors.dart';
 import '../../data/repositories/profile_repository.dart';
+
+// ── Dark theme constants ────────────────────────────────────────────────────
+const Color _kBg = Color(0xFF060708);
+const Color _kCardBg = Color(0xFF1A1D23);
+const Color _kLime = Color(0xFFE2FF54);
+const Color _kBorder = Color(0xFF2A2D35);
+const Color _kTextSecondary = Color(0xFF8A8F9D);
 
 /// Screen for selecting food allergies.
 /// Users can select from predefined lists or enter custom allergies.
@@ -65,11 +72,9 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // Combine selected allergies with other allergies text
       final allAllergies = <String>[...selectedAllergies];
       final otherText = otherController.text.trim();
       if (otherText.isNotEmpty) {
-        // Split by comma and add each trimmed item
         final others = otherText
             .split(',')
             .map((e) => e.trim())
@@ -86,7 +91,10 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: ${e.toString()}')),
+          SnackBar(
+            backgroundColor: _kCardBg,
+            content: Text('Lỗi: $e', style: GoogleFonts.inter(color: Colors.white)),
+          ),
         );
       }
     } finally {
@@ -99,39 +107,36 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: _kBg,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Thực phẩm dị ứng',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+        ),
       ),
       body: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Animal allergies section
                   _buildAllergyGroup('NHÓM ĐỘNG VẬT', animalAllergies),
-
-                  // Plant allergies section
                   _buildAllergyGroup('NHÓM THỰC VẬT', plantAllergies),
-
-                  // Other section
                   _buildOtherSection(),
-
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ),
-
-          // Bottom action
           _buildBottomAction(),
         ],
       ),
@@ -142,35 +147,32 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section title
         Padding(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: 24, bottom: 8),
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 28, bottom: 12),
           child: Text(
             title,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.blueGrey.shade400,
-              letterSpacing: 1.2,
+              fontWeight: FontWeight.w800,
+              color: _kTextSecondary,
+              letterSpacing: 1.5,
             ),
           ),
         ),
-
-        // Items container
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200, width: 0.8),
+              color: _kCardBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _kBorder, width: 0.8),
             ),
             child: Column(
               children: [
                 for (int i = 0; i < items.length; i++) ...[
                   _buildAllergyItem(items[i]),
                   if (i < items.length - 1)
-                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    Divider(height: 1, indent: 20, endIndent: 20, color: _kBorder),
                 ],
               ],
             ),
@@ -193,24 +195,26 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
           }
         });
       },
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 item,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 15,
-                  color: Colors.grey.shade800,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? _kLime : Colors.white,
                 ),
               ),
             ),
-            isSelected
-                ? Icon(Icons.check_circle, color: AppColors.success, size: 22)
-                : Icon(Icons.radio_button_unchecked,
-                    color: Colors.grey.shade400, size: 22),
+            Icon(
+              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: isSelected ? _kLime : Colors.white24,
+              size: 22,
+            ),
           ],
         ),
       ),
@@ -221,42 +225,39 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section title
         Padding(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: 24, bottom: 8),
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 28, bottom: 12),
           child: Text(
             'KHÁC',
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.blueGrey.shade400,
-              letterSpacing: 1.2,
+              fontWeight: FontWeight.w800,
+              color: _kTextSecondary,
+              letterSpacing: 1.5,
             ),
           ),
         ),
-
-        // TextField container
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200, width: 0.8),
+              color: _kCardBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _kBorder, width: 0.8),
             ),
             child: TextField(
               controller: otherController,
-              maxLines: 3,
-              minLines: 3,
+              maxLines: 4,
               onChanged: (_) => setState(() {}),
+              style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'Nhập các thực phẩm bạn dị ứng, cách nhau bằng dấu phẩy',
-                hintStyle: TextStyle(
-                  color: Colors.grey.shade400,
+                hintText: 'Nhập các thực phẩm bạn dị ứng khác...',
+                hintStyle: GoogleFonts.inter(
+                  color: Colors.white24,
                   fontSize: 14,
                 ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(16),
+                contentPadding: const EdgeInsets.all(20),
               ),
             ),
           ),
@@ -266,70 +267,44 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
   }
 
   Widget _buildBottomAction() {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            top: BorderSide(color: Colors.grey.shade200, width: 1),
-          ),
-        ),
-        child: hasData
-            ? SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: FilledButton(
-                  onPressed: _isSaving ? null : _save,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      decoration: BoxDecoration(
+        color: _kCardBg,
+        border: Border(top: BorderSide(color: _kBorder)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: FilledButton(
+            onPressed: _isSaving ? null : _save,
+            style: FilledButton.styleFrom(
+              backgroundColor: _kLime,
+              foregroundColor: _kBg,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: _kBg,
+                    ),
+                  )
+                : Text(
+                    hasData ? 'Lưu dị ứng' : 'Không có dị ứng',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Lưu',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              )
-            : SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: TextButton(
-                  onPressed: _isSaving ? null : _save,
-                  child: _isSaving
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.success,
-                          ),
-                        )
-                      : Text(
-                          'Không dị ứng với thực phẩm nào',
-                          style: TextStyle(
-                            color: AppColors.success,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                ),
-              ),
+          ),
+        ),
       ),
     );
   }

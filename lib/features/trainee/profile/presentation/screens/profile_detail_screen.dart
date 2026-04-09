@@ -2,14 +2,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:vertical_weight_slider/vertical_weight_slider.dart';
-
-import '../../../../../core/theme/app_colors.dart';
 
 import '../../../../auth/data/models/user_model.dart';
 import '../../data/repositories/profile_repository.dart';
 import 'allergy_selection_screen.dart';
+
+// ── Dark theme constants ────────────────────────────────────────────────────
+const Color _kBg = Color(0xFF060708);
+const Color _kCardBg = Color(0xFF1A1D23);
+const Color _kLime = Color(0xFFE2FF54);
+const Color _kBorder = Color(0xFF2A2D35);
+const Color _kTextSecondary = Color(0xFF8A8F9D);
+const Color _kError = Color(0xFFFF5252);
 
 /// Read-only profile detail screen showing trainee information
 /// in a card-based layout grouped by sections.
@@ -144,16 +152,18 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: _kCardBg,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: _kBorder),
         ),
         title: Text(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
             fontSize: 20,
+            color: Colors.white,
           ),
         ),
         content: SingleChildScrollView(
@@ -164,68 +174,98 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               // Definition section
               Text(
                 '$title là gì?',
-                style: const TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
+                  color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 definition,
-                style: TextStyle(
-                  color: Colors.grey.shade700,
+                style: GoogleFonts.inter(
+                  color: _kTextSecondary,
                   fontSize: 14,
-                  height: 1.4,
+                  height: 1.5,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
               // User value section
-              Text(
-                '$title của bạn: $userValueText',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _kLime.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$title của bạn: $userValueText',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: _kLime,
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
               // Formula section
               Text(
                 formulaTitle,
-                style: const TextStyle(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                formula,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Notes section
-              const Text(
-                'Chú thích:',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  formula,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.white70,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 20),
+
+              // Notes section
+              Text(
+                'Chú thích:',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
               ...notes.map((note) => Padding(
-                padding: const EdgeInsets.only(left: 8, bottom: 2),
-                child: Text(
-                  '• $note',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
+                padding: const EdgeInsets.only(left: 4, bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('• ', style: TextStyle(color: _kLime)),
+                    Expanded(
+                      child: Text(
+                        note,
+                        style: GoogleFonts.inter(
+                          color: _kTextSecondary,
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               )),
             ],
@@ -235,9 +275,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'OK',
-              style: TextStyle(
-                color: AppColors.success,
+              'Đóng',
+              style: GoogleFonts.inter(
+                color: _kLime,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -263,14 +303,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF121419),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetCtx) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+        return Padding(
           padding: EdgeInsets.only(
             left: 20,
             right: 20,
@@ -281,58 +319,80 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Handle ──
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               // ── Header ──
               Row(
                 children: [
-                  const Spacer(),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 40),
+                  Expanded(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                  const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(sheetCtx),
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close, color: Colors.white54),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               // ── Label ──
               Text(
                 label,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 13,
-                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
+                  color: _kTextSecondary,
+                  letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
 
               // ── Text Field ──
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
+                  color: _kBg,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _kBorder),
                 ),
                 child: TextField(
                   controller: controller,
+                  autofocus: true,
                   keyboardType: keyboardType,
-                  decoration: const InputDecoration(
+                  style: GoogleFonts.inter(color: Colors.white),
+                  decoration: InputDecoration(
                     border: InputBorder.none,
+                    hintText: 'Nhập $title...',
+                    hintStyle: GoogleFonts.inter(color: Colors.white24),
                     contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
 
               // ── Save Button ──
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 54,
                 child: FilledButton(
                   onPressed: () async {
                     final value = controller.text.trim();
@@ -341,17 +401,17 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     await onSave(value);
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                    backgroundColor: _kLime,
+                    foregroundColor: _kBg,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
-                    'Lưu',
-                    style: TextStyle(
+                  child: Text(
+                    'Lưu thay đổi',
+                    style: GoogleFonts.inter(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -373,70 +433,70 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF121419),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetCtx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 16,
-                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
-              ),
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                   // Handle
+                   Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   // ── Header ──
                   Row(
                     children: [
-                      const Spacer(),
-                      const Text(
-                        'Giới tính sinh học',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(width: 40),
+                      Expanded(
+                        child: Text(
+                          'Giới tính sinh học',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      const Spacer(),
                       IconButton(
                         onPressed: () => Navigator.pop(sheetCtx),
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close, color: Colors.white54),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
 
-                  // ── Female option ──
                   _GenderOptionTile(
-                    icon: Icons.female,
+                    icon: PhosphorIcons.genderFemale(),
                     label: 'Nữ',
                     isSelected: selected == 'female',
-                    onTap: () =>
-                        setSheetState(() => selected = 'female'),
+                    onTap: () => setSheetState(() => selected = 'female'),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
 
-                  // ── Male option ──
                   _GenderOptionTile(
-                    icon: Icons.male,
+                    icon: PhosphorIcons.genderMale(),
                     label: 'Nam',
                     isSelected: selected == 'male',
-                    onTap: () =>
-                        setSheetState(() => selected = 'male'),
+                    onTap: () => setSheetState(() => selected = 'male'),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 32),
 
-                  // ── Save Button ──
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 54,
                     child: FilledButton(
                       onPressed: () async {
                         Navigator.pop(sheetCtx);
@@ -451,29 +511,30 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content: Text(
-                                        'Lỗi: ${e.toString()}')),
+                                    backgroundColor: _kCardBg,
+                                    content: Text('Lỗi: $e', style: const TextStyle(color: Colors.white))),
                               );
                             }
                           }
                         }
                       },
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
+                        backgroundColor: _kLime,
+                        foregroundColor: _kBg,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Lưu',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             );
@@ -488,63 +549,77 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   void _showDatePickerSheet() {
-    DateTime selectedDate =
-        _profile?.birthDate ?? DateTime(2000, 1, 1);
+    DateTime selectedDate = _profile?.birthDate ?? DateTime(2000, 1, 1);
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF121419),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetCtx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: const EdgeInsets.only(
-                  left: 20, right: 20, top: 16, bottom: 24),
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   Row(
                     children: [
-                      const Spacer(),
-                      const Text('Ngày sinh',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                      const Spacer(),
+                      const SizedBox(width: 40),
+                      Expanded(
+                        child: Text(
+                          'Ngày sinh',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                       IconButton(
                         onPressed: () => Navigator.pop(sheetCtx),
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close, color: Colors.white54),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
 
-                  // Cupertino Date Picker
                   SizedBox(
-                    height: 200,
-                    child: CupertinoDatePicker(
-                      mode: CupertinoDatePickerMode.date,
-                      initialDateTime: selectedDate,
-                      minimumDate: DateTime(1940),
-                      maximumDate: DateTime.now(),
-                      onDateTimeChanged: (date) {
-                        setSheetState(() => selectedDate = date);
-                      },
+                    height: 220,
+                    child: CupertinoTheme(
+                      data: const CupertinoThemeData(
+                        textTheme: CupertinoTextThemeData(
+                          dateTimePickerTextStyle: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
+                      ),
+                      child: CupertinoDatePicker(
+                        mode: CupertinoDatePickerMode.date,
+                        initialDateTime: selectedDate,
+                        minimumDate: DateTime(1940),
+                        maximumDate: DateTime.now(),
+                        onDateTimeChanged: (date) {
+                          setSheetState(() => selectedDate = date);
+                        },
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                  // Save Button
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 54,
                     child: FilledButton(
                       onPressed: () async {
                         Navigator.pop(sheetCtx);
@@ -557,25 +632,23 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content:
-                                      Text('Lỗi: ${e.toString()}')),
+                              SnackBar(content: Text('Lỗi: $e')),
                             );
                           }
                         }
                       },
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
+                        backgroundColor: _kLime,
+                        foregroundColor: _kBg,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text('Lưu',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: Text('Lưu',
+                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             );
@@ -592,50 +665,52 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   void _showHeightPickerSheet() {
     const int minHeight = 100;
     const int maxHeight = 250;
-    final int initialIndex =
-        (_profile?.height?.toInt() ?? 170) - minHeight;
+    final int initialIndex = (_profile?.height?.toInt() ?? 170) - minHeight;
     int selectedHeight = _profile?.height?.toInt() ?? 170;
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF121419),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetCtx) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.only(
-              left: 20, right: 20, top: 16, bottom: 24),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Row(
                 children: [
-                  const Spacer(),
-                  const Text('Chiều cao',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
-                  const Spacer(),
+                  const SizedBox(width: 40),
+                  Expanded(
+                    child: Text('Chiều cao',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
                   IconButton(
                     onPressed: () => Navigator.pop(sheetCtx),
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close, color: Colors.white54),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
 
-              // Cupertino Picker
               SizedBox(
-                height: 200,
+                height: 220,
                 child: CupertinoPicker(
-                  scrollController: FixedExtentScrollController(
-                      initialItem: initialIndex),
-                  itemExtent: 40,
+                  scrollController: FixedExtentScrollController(initialItem: initialIndex),
+                  itemExtent: 44,
                   onSelectedItemChanged: (index) {
                     selectedHeight = minHeight + index;
                   },
@@ -644,8 +719,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     (i) => Center(
                       child: Text(
                         '${minHeight + i} cm',
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          color: Colors.white,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -653,12 +729,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              // Save Button
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 54,
                 child: FilledButton(
                   onPressed: () async {
                     Navigator.pop(sheetCtx);
@@ -671,25 +746,23 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     } catch (e) {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content:
-                                  Text('Lỗi: ${e.toString()}')),
+                          SnackBar(content: Text('Lỗi: $e')),
                         );
                       }
                     }
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                    backgroundColor: _kLime,
+                    foregroundColor: _kBg,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text('Lưu',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: Text('Lưu',
+                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         );
@@ -698,7 +771,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // BottomSheet: Weight Ruler (using vertical_weight_slider horizontal)
+  // BottomSheet: Weight Ruler
   // ═══════════════════════════════════════════════════════════════════════════
 
   void _showWeightRulerSheet() {
@@ -711,93 +784,91 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF121419),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetCtx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: const EdgeInsets.only(top: 16, bottom: 24),
+            return Padding(
+              padding: const EdgeInsets.only(top: 16, bottom: 40),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
-                        const Spacer(),
-                        const Text('Cân nặng',
-                            style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
-                        const Spacer(),
+                        const SizedBox(width: 40),
+                        Expanded(
+                          child: Text('Cân nặng',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                  fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ),
                         IconButton(
                           onPressed: () {
                             controller.dispose();
                             Navigator.pop(sheetCtx);
                           },
-                          icon: const Icon(Icons.close),
+                          icon: const Icon(Icons.close, color: Colors.white54),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 32),
 
-                  // Current weight display
                   Text(
                     '${currentWeight.toStringAsFixed(1)} kg',
-                    style: const TextStyle(
-                      fontSize: 28, // Even smaller font
-                      fontWeight: FontWeight.bold,
+                    style: GoogleFonts.inter(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w800,
+                      color: _kLime,
                     ),
                   ),
-                  const SizedBox(height: 8), // Less gap
+                  const SizedBox(height: 24),
 
-                  // Horizontal weight slider
                   SizedBox(
-                    height: 60, // Constrain the overall height of the slider
+                    height: 80,
                     child: VerticalWeightSlider(
                       isVertical: false,
                       controller: controller,
                       decoration: const PointerDecoration(
                         width: 40.0,
-                        height: 2.0, // Thinner lines
-                        largeColor: Color(0xFF898989),
-                        mediumColor: Color(0xFFC5C5C5),
-                        smallColor: Color(0xFFF0F0F0),
+                        height: 3.0,
+                        largeColor: Colors.white70,
+                        mediumColor: Colors.white38,
+                        smallColor: Colors.white12,
                         gap: 16.0,
                       ),
                       onChanged: (double value) {
-                        setSheetState(
-                            () => currentWeight = value);
+                        setSheetState(() => currentWeight = value);
                       },
                       indicator: Container(
-                        height: 2.0,
-                        width: 80.0,
+                        height: 3.0,
+                        width: 100.0,
                         alignment: Alignment.centerLeft,
-                        color: Colors.green,
+                        color: _kLime,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 40),
 
-
-
-                  // Save Button
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 54,
                       child: FilledButton(
                         onPressed: () async {
                           final w = currentWeight;
@@ -806,31 +877,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           try {
                             await _repo.updateProfile(
                               name: _profile?.name ?? '',
-                              weight: double.parse(
-                                  w.toStringAsFixed(1)),
+                              weight: double.parse(w.toStringAsFixed(1)),
                             );
                             await _loadProfile();
                           } catch (e) {
                             if (mounted) {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                      content: Text(
-                                          'Lỗi: ${e.toString()}')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Lỗi: $e')),
+                              );
                             }
                           }
                         },
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                          backgroundColor: _kLime,
+                          foregroundColor: _kBg,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Text('Lưu',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold)),
+                        child: Text('Lưu',
+                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
                       ),
                     ),
                   ),
@@ -847,21 +913,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   // Activity Level Sheet
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Reusable bottom sheet for selecting activity levels.
-  /// [title] - Sheet title (e.g. "Mức độ công việc")
-  /// [options] - List of {value, label, subtitle} maps
-  /// [currentValue] - Current selected value
-  /// [onSave] - Callback when trainee saves selection
   void _showActivityLevelSheet({
     required String title,
     required List<Map<String, String>> options,
     required String? currentValue,
     required Future<void> Function(String) onSave,
   }) {
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF121419),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -876,7 +937,15 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Header
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                     Row(
                       children: [
                         const SizedBox(width: 40),
@@ -884,26 +953,21 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           child: Text(
                             title,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(sheetCtx),
-                          icon: const Icon(Icons.close, size: 24),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 40,
-                            minHeight: 40,
-                          ),
+                          icon: const Icon(Icons.close, color: Colors.white54),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                    // Options
                     ...options.map((option) {
                       final isSelected = selectedValue == option['value'];
                       return Padding(
@@ -919,12 +983,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       );
                     }),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 20),
 
-                    // Save Button
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 54,
                       child: FilledButton(
                         onPressed: selectedValue != null
                             ? () async {
@@ -933,17 +996,17 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                               }
                             : null,
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                          backgroundColor: _kLime,
+                          foregroundColor: _kBg,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Lưu',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
@@ -959,9 +1022,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Save helpers called from text input sheets
+  // Save Helpers
   // ═══════════════════════════════════════════════════════════════════════════
 
   Future<void> _saveName(String value) async {
@@ -970,99 +1031,73 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       await _loadProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
   }
 
   Future<void> _savePhone(String value) async {
     try {
-      await _repo.updateProfile(
-        name: _profile?.name ?? '',
-        phone: value,
-      );
+      await _repo.updateProfile(name: _profile?.name ?? '', phone: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
   }
 
   Future<void> _saveEmail(String value) async {
-    // Email update requires Firebase Auth re-authentication,
-    // so for now we only update Firestore field.
     try {
-      await _repo.updateProfile(
-        name: _profile?.name ?? '',
-      );
+      await _repo.updateProfile(name: _profile?.name ?? '');
       await _loadProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
   }
 
   Future<void> _saveWorkActivity(String value) async {
     try {
-      await _repo.updateProfile(
-        name: _profile?.name ?? '',
-        workActivity: value,
-      );
+      await _repo.updateProfile(name: _profile?.name ?? '', workActivity: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
   }
 
   Future<void> _saveHomeActivity(String value) async {
     try {
-      await _repo.updateProfile(
-        name: _profile?.name ?? '',
-        homeActivity: value,
-      );
+      await _repo.updateProfile(name: _profile?.name ?? '', homeActivity: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
   }
 
   Future<void> _saveActivityLevel(String value) async {
     try {
-      await _repo.updateProfile(
-        name: _profile?.name ?? '',
-        activityLevel: value,
-      );
+      await _repo.updateProfile(name: _profile?.name ?? '', activityLevel: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
   }
 
   Future<void> _saveGoal(String value) async {
     try {
-      await _repo.updateProfile(
-        name: _profile?.name ?? '',
-        goal: value,
-      );
+      await _repo.updateProfile(name: _profile?.name ?? '', goal: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       }
     }
   }
@@ -1073,82 +1108,87 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: _kBg,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Hồ sơ cá nhân',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: _kLime))
           : SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Header: Avatar + Name + Edit photo ──
+                  // ── Header ──
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: theme.colorScheme.primary
-                              .withValues(alpha: 0.12),
-                          backgroundImage: user?.photoURL != null
-                              ? NetworkImage(user!.photoURL!)
-                              : null,
-                          child: user?.photoURL == null
-                              ? Icon(Icons.person,
-                                  size: 32,
-                                  color: theme.colorScheme.primary)
-                              : null,
+                        Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: _kLime, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 36,
+                            backgroundColor: _kCardBg,
+                            backgroundImage: user?.photoURL != null
+                                ? NetworkImage(user!.photoURL!)
+                                : null,
+                            child: user?.photoURL == null
+                                ? Icon(PhosphorIcons.user(), size: 36, color: _kLime)
+                                : null,
+                          ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 20),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 _profile?.name ?? 'Người dùng',
-                                style: theme.textTheme.titleLarge?.copyWith(
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 22,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Text(
                                 'Thành viên từ ${_formatDate(_profile?.createdAt)}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey.shade600,
+                                style: GoogleFonts.inter(
+                                  color: _kTextSecondary,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        FilledButton.tonal(
-                          onPressed: () {
-                            // TODO: Open image picker
-                          },
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.grey.shade200,
-                            foregroundColor: Colors.black87,
+                        IconButton(
+                          onPressed: () {},
+                          style: IconButton.styleFrom(
+                            backgroundColor: _kCardBg,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: _kBorder),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
                           ),
-                          child: const Text('Sửa ảnh',
-                              style: TextStyle(fontSize: 13)),
+                          icon: Icon(PhosphorIcons.pencilLine(), color: Colors.white, size: 20),
                         ),
                       ],
                     ),
@@ -1162,51 +1202,47 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       value: _profile?.uid.substring(0, 8) ?? '--',
                       trailing: GestureDetector(
                         onTap: () {
-                          Clipboard.setData(
-                            ClipboardData(text: _profile?.uid ?? ''),
-                          );
+                          Clipboard.setData(ClipboardData(text: _profile?.uid ?? ''));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đã copy ID'),
-                              duration: Duration(seconds: 1),
-                            ),
+                            SnackBar(
+                                backgroundColor: _kCardBg,
+                                content: Text('Đã copy ID', style: GoogleFonts.inter(color: Colors.white))),
                           );
                         },
-                        child: Icon(Icons.copy_outlined,
-                            size: 18, color: Colors.grey.shade400),
+                        child: Icon(PhosphorIcons.copy(), size: 18, color: _kLime),
                       ),
                     ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    const _CustomDivider(),
                     _InfoRow(
                       label: 'Tên',
                       value: _profile?.name ?? '--',
                       onTap: () => _showTextInputSheet(
-                        title: 'Cập nhật thông tin',
-                        label: 'Đặt tên',
+                        title: 'Cập nhật tên',
+                        label: 'Tên hiển thị',
                         initialValue: _profile?.name ?? '',
                         onSave: _saveName,
                       ),
                     ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                    _InfoRow(label: 'Gói đăng ký', value: 'Gói dùng thử'),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    const _CustomDivider(),
+                    const _InfoRow(label: 'Gói đăng ký', value: 'Gói Premium'),
+                    const _CustomDivider(),
                     _InfoRow(
                       label: 'Điện thoại',
                       value: _profile?.phone ?? '--',
                       onTap: () => _showTextInputSheet(
-                        title: 'Cập nhật thông tin',
+                        title: 'Cập nhật điện thoại',
                         label: 'Số điện thoại',
                         initialValue: _profile?.phone ?? '',
                         keyboardType: TextInputType.phone,
                         onSave: _savePhone,
                       ),
                     ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    const _CustomDivider(),
                     _InfoRow(
                       label: 'Email',
                       value: _profile?.email ?? '--',
                       onTap: () => _showTextInputSheet(
-                        title: 'Cập nhật thông tin',
+                        title: 'Cập nhật email',
                         label: 'Địa chỉ email',
                         initialValue: _profile?.email ?? '',
                         keyboardType: TextInputType.emailAddress,
@@ -1217,11 +1253,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
                   // ── Section 2: THÔNG TIN CƠ BẢN ──
                   const _SectionLabel(title: 'THÔNG TIN CƠ BẢN'),
-                  Builder(builder: (_) {
-                    final bmi =
-                        _calcBmi(_profile?.height, _profile?.weight);
-                    final bmr = _calcBmr(_profile?.height, _profile?.weight,
-                        _profile?.birthDate, _profile?.gender);
+                  Builder(builder: (ctx) {
+                    final bmi = _calcBmi(_profile?.height, _profile?.weight);
+                    final bmr = _calcBmr(_profile?.height, _profile?.weight, _profile?.birthDate, _profile?.gender);
                     final tdee = _calcTdee(bmr, _profile?.activityLevel);
 
                     return _CardGroup(children: [
@@ -1230,29 +1264,25 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         value: _formatGender(_profile?.gender),
                         onTap: _showGenderSelectionSheet,
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
                         label: 'Ngày sinh',
                         value: _formatDate(_profile?.birthDate),
                         onTap: _showDatePickerSheet,
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
                         label: 'Chiều cao',
-                        value: _profile?.height != null
-                            ? '${_profile!.height!.toStringAsFixed(0)} cm'
-                            : '--',
+                        value: _profile?.height != null ? '${_profile!.height!.toStringAsFixed(0)} cm' : '--',
                         onTap: _showHeightPickerSheet,
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
                         label: 'Cân nặng',
-                        value: _profile?.weight != null
-                            ? '${_profile!.weight!.toStringAsFixed(1)} kg'
-                            : '--',
+                        value: _profile?.weight != null ? '${_profile!.weight!.toStringAsFixed(1)} kg' : '--',
                         onTap: _showWeightRulerSheet,
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
                         label: 'Mục tiêu',
                         value: _formatGoal(_profile?.goal),
@@ -1267,141 +1297,101 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           onSave: _saveGoal,
                         ),
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
-                        label: 'Mức độ công việc',
+                        label: 'Công việc',
                         value: _formatWorkActivity(_profile?.workActivity),
                         onTap: () => _showActivityLevelSheet(
                           title: 'Mức độ công việc',
                           options: const [
                             {'value': 'sedentary', 'label': 'Ít vận động', 'subtitle': 'Ngồi máy tính cả ngày'},
-                            {'value': 'light', 'label': 'Vận động nhẹ', 'subtitle': 'Đi lại nhẹ nhàng, đứng nhiều'},
-                            {'value': 'moderate', 'label': 'Vận động vừa phải', 'subtitle': 'Công việc đòi hỏi vận động'},
+                            {'value': 'light', 'label': 'Vận động nhẹ', 'subtitle': 'Đi lại nhẹ nhàng'},
+                            {'value': 'moderate', 'label': 'Trung bình', 'subtitle': 'Đứng nhiều, đi lại liên tục'},
                             {'value': 'active', 'label': 'Vận động nhiều', 'subtitle': 'Lao động chân tay nặng'},
                           ],
                           currentValue: _profile?.workActivity,
                           onSave: _saveWorkActivity,
                         ),
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
-                        label: 'Hoạt động ở nhà',
+                        label: 'Hoạt động nhà',
                         value: _formatHomeActivity(_profile?.homeActivity),
                         onTap: () => _showActivityLevelSheet(
                           title: 'Hoạt động ở nhà',
                           options: const [
-                            {'value': 'sedentary', 'label': 'Ít hoạt động', 'subtitle': 'Chủ yếu nằm, ngồi'},
+                            {'value': 'sedentary', 'label': 'Ít hoạt động', 'subtitle': 'Nghỉ ngơi là chính'},
                             {'value': 'light', 'label': 'Nhẹ nhàng', 'subtitle': 'Việc nhà cơ bản'},
                             {'value': 'moderate', 'label': 'Linh hoạt', 'subtitle': 'Dọn dẹp, nấu ăn thường xuyên'},
-                            {'value': 'active', 'label': 'Năng nổ', 'subtitle': 'Hoạt động liên tục, chăm sóc con nhỏ'},
+                            {'value': 'active', 'label': 'Năng nổ', 'subtitle': 'Chăm sóc gia đình bận rộn'},
                           ],
                           currentValue: _profile?.homeActivity,
                           onSave: _saveHomeActivity,
                         ),
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
-                        label: 'Tập luyện thể chất',
+                        label: 'Tập luyện',
                         value: _formatActivityLevel(_profile?.activityLevel),
                         onTap: () => _showActivityLevelSheet(
                           title: 'Tập luyện thể chất',
                           options: const [
-                            {'value': 'sedentary', 'label': 'Không tập luyện', 'subtitle': 'Không hoặc rất ít vận động'},
+                            {'value': 'sedentary', 'label': 'Không tập luyện', 'subtitle': 'Ngồi nhiều, không tập thể dục'},
                             {'value': 'light', 'label': 'Tập luyện nhẹ', 'subtitle': '1-2 buổi/tuần'},
-                            {'value': 'moderate', 'label': 'Tập luyện trung bình', 'subtitle': '3-4 buổi/tuần'},
-                            {'value': 'active', 'label': 'Tập luyện tích cực', 'subtitle': '5-6 buổi/tuần'},
-                            {'value': 'very_active', 'label': 'Vận động viên', 'subtitle': 'Tập luyện mỗi ngày, cường độ cao'},
+                            {'value': 'moderate', 'label': 'Trung bình', 'subtitle': '3-4 buổi/tuần'},
+                            {'value': 'active', 'label': 'Tích cực', 'subtitle': '5-6 buổi/tuần'},
+                            {'value': 'very_active', 'label': 'Cường độ cao', 'subtitle': 'Tập luyện mỗi ngày'},
                           ],
                           currentValue: _profile?.activityLevel,
                           onSave: _saveActivityLevel,
                         ),
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
-                        label: 'BMI',
+                        label: 'Chỉ số BMI',
                         value: bmi != null ? bmi.toStringAsFixed(1) : '--',
-                        trailing: Icon(Icons.info_outline,
-                            size: 18, color: Colors.grey.shade400),
-                        onTap: bmi != null
-                            ? () => _showInfoDialog(
-                                  title: 'BMI',
-                                  definition:
-                                      'BMI là viết tắt của chỉ số khối cơ thể (Body Mass Index), là một chỉ số đơn giản để đánh giá tình trạng cân nặng của một người dựa trên chiều cao và cân nặng của họ. Chỉ số này giúp xác định bạn có đang ở mức thiếu cân, bình thường, thừa cân hay béo phì, từ đó có biện pháp điều chỉnh chế độ ăn uống và sinh hoạt hợp lý.',
-                                  userValueText: bmi.toStringAsFixed(1),
-                                  formulaTitle: 'Công thức tính BMI',
-                                  formula: 'BMI = (Cân nặng) ÷ (Chiều cao)²',
-                                  notes: [
-                                    'BMI < 18,5: Thiếu cân',
-                                    'BMI : 18,5 - 22,9: Bình thường',
-                                    'BMI : 23 - 24,9: Thừa cân',
-                                    'BMI : 25 - 29,9: Béo phì độ I',
-                                    'BMI ≥ 30: Béo phì độ II',
-                                  ],
-                                )
-                            : null,
+                        trailing: Icon(PhosphorIcons.info(), size: 18, color: _kLime),
+                        onTap: bmi != null ? () => _showInfoDialog(
+                          title: 'BMI',
+                          definition: 'BMI (Body Mass Index) là chỉ số khối cơ thể, đánh giá mức độ cân đối giữa chiều cao và cân nặng.',
+                          userValueText: bmi.toStringAsFixed(1),
+                          formulaTitle: 'Công thức',
+                          formula: 'BMI = W (kg) / H² (m)',
+                          notes: [
+                            'Dưới 18.5: Thiếu cân',
+                            '18.5 - 22.9: Bình thường',
+                            '23.0 - 24.9: Tiền béo phì',
+                            'Trên 25.0: Béo phì',
+                          ],
+                        ) : null,
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
-                        label: 'BMR',
-                        value: bmr != null
-                            ? '${bmr.toStringAsFixed(0)} kcal'
-                            : '--',
-                        trailing: Icon(Icons.info_outline,
-                            size: 18, color: Colors.grey.shade400),
-                        onTap: bmr != null
-                            ? () {
-                                final age = _profile?.birthDate != null
-                                    ? DateTime.now()
-                                            .difference(_profile!.birthDate!)
-                                            .inDays ~/
-                                        365
-                                    : 0;
-                                _showInfoDialog(
-                                  title: 'BMR',
-                                  definition:
-                                      'BMR (Basal Metabolic Rate) là tỉ lệ trao đổi chất cơ bản. Đây là lượng Calo tối thiểu để duy trì các chức năng sống cơ bản ở trạng thái cơ thể hoàn toàn nghỉ ngơi.',
-                                  userValueText:
-                                      '${bmr.toStringAsFixed(0)} Calo/ngày',
-                                  formulaTitle: 'Công thức tính BMR:',
-                                  formula:
-                                      '(10 x W) + (6.25 x H) - (5 x A) + 5',
-                                  notes: [
-                                    'W - cân nặng: ${_profile?.weight?.toStringAsFixed(1) ?? '--'} kg',
-                                    'H - chiều cao: ${_profile?.height?.toStringAsFixed(0) ?? '--'} cm',
-                                    'A - tuổi: $age',
-                                    '* NutriFit sử dụng phương trình Mifflin-St Jeor để ước tính BMR.',
-                                  ],
-                                );
-                              }
-                            : null,
+                        label: 'Chỉ số BMR',
+                        value: bmr != null ? '${bmr.toStringAsFixed(0)} kcal' : '--',
+                        trailing: Icon(PhosphorIcons.info(), size: 18, color: _kLime),
+                        onTap: bmr != null ? () => _showInfoDialog(
+                          title: 'BMR',
+                          definition: 'BMR là mức trao đổi chất cơ bản, lượng calo cần thiết để duy trì sự sống khi cơ thể nghỉ ngơi hoàn toàn.',
+                          userValueText: '${bmr.toStringAsFixed(0)} kcal/ngày',
+                          formulaTitle: 'Công thức Mifflin-St Jeor',
+                          formula: '(10 × W) + (6.25 × H) - (5 × A) + s',
+                          notes: ['Nam: s = +5', 'Nữ: s = -161', 'W: Cân nặng, H: Chiều cao, A: Tuổi'],
+                        ) : null,
                       ),
-                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      const _CustomDivider(),
                       _InfoRow(
-                        label: 'TDEE',
-                        value: tdee != null
-                            ? '${tdee.toStringAsFixed(0)} kcal'
-                            : '--',
-                        trailing: Icon(Icons.info_outline,
-                            size: 18, color: Colors.grey.shade400),
-                        onTap: tdee != null && bmr != null
-                            ? () {
-                                final pal =
-                                    _getPalFactor(_profile?.activityLevel);
-                                _showInfoDialog(
-                                  title: 'TDEE',
-                                  definition:
-                                      'TDEE (Total Daily Energy Expenditure) là tổng năng lượng (Calo) tiêu hao cho các hoạt động trong một ngày - bao gồm các hoạt động sống cơ bản và tất cả các hoạt động thể chất khác. Khi trung bình lượng Calo bạn ăn vào hàng ngày đạt mức TDEE, bạn sẽ giữ cân. Nếu bạn ăn thấp hơn, bạn sẽ giảm cân (và ngược lại).',
-                                  userValueText:
-                                      '${tdee.toStringAsFixed(0)} Calo/ngày',
-                                  formulaTitle: 'Công thức tính TDEE',
-                                  formula: 'TDEE (Kcal/ngày) = BMR x PAL',
-                                  notes: [
-                                    'BMR của bạn: ${bmr.toStringAsFixed(0)} Calo (Tỉ lệ trao đổi chất cơ bản)',
-                                    'PAL của bạn: $pal (Hệ số vận động dựa trên mức độ hoạt động)',
-                                  ],
-                                );
-                              }
-                            : null,
+                        label: 'Chỉ số TDEE',
+                        value: tdee != null ? '${tdee.toStringAsFixed(0)} kcal' : '--',
+                        trailing: Icon(PhosphorIcons.info(), size: 18, color: _kLime),
+                        onTap: tdee != null ? () => _showInfoDialog(
+                          title: 'TDEE',
+                          definition: 'TDEE là tổng năng lượng tiêu hao mỗi ngày, bao gồm cả BMR và các hoạt động thể chất.',
+                          userValueText: '${tdee.toStringAsFixed(0)} kcal/ngày',
+                          formulaTitle: 'Cách tính',
+                          formula: 'TDEE = BMR × PAL',
+                          notes: ['PAL là hệ số hoạt động thể chất của bạn.'],
+                        ) : null,
                       ),
                     ]);
                   }),
@@ -1410,48 +1400,34 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   const _SectionLabel(title: 'KHÁC'),
                   _CardGroup(children: [
                     _InfoRow(
-                      label: 'Thực phẩm dị ứng',
-                      value: '',
+                      label: 'Dị ứng thực phẩm',
+                      value: _profile?.allergies != null && (_profile!.allergies?.isNotEmpty ?? false) 
+                          ? '${_profile!.allergies!.length} loại' 
+                          : 'Không có',
                       onTap: () async {
-                        // Extract selected allergies from profile
-                        final knownAllergies = <String>[];
-                        final allAllergies = _profile?.allergies ?? [];
-                        const animalList = [
-                          'Tôm',
-                          'Cua',
-                          'Cá',
-                          'Thịt bò',
-                          'Trứng',
-                          'Sữa bò'
-                        ];
-                        const plantList = [
-                          'Lúa mì',
-                          'Đậu phộng (lạc)',
-                          'Hạt điều'
-                        ];
-                        for (final a in allAllergies) {
-                          if (animalList.contains(a) ||
-                              plantList.contains(a)) {
-                            knownAllergies.add(a);
-                          }
-                        }
+                         final knownAllergies = <String>[];
+                         final allAllergies = _profile?.allergies ?? [];
+                         // This part preserves existing filter logic
+                         const animalList = ['Tôm','Cua','Cá','Thịt bò','Trứng','Sữa bò'];
+                         const plantList = ['Lúa mì','Đậu phộng (lạc)','Hạt điều'];
+                         for (final a in allAllergies) {
+                           if (animalList.contains(a) || plantList.contains(a)) knownAllergies.add(a);
+                         }
 
-                        final result = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AllergySelectionScreen(
-                              initialAllergies: knownAllergies,
-                              initialOtherAllergies:
-                                  _profile?.otherAllergies ?? '',
-                            ),
-                          ),
-                        );
-                        if (result == true) {
-                          await _loadProfile();
-                        }
+                         final res = await Navigator.push<bool>(
+                           context,
+                           MaterialPageRoute(
+                             builder: (_) => AllergySelectionScreen(
+                               initialAllergies: knownAllergies,
+                               initialOtherAllergies: _profile?.otherAllergies ?? '',
+                             ),
+                           ),
+                         );
+                         if (res == true) await _loadProfile();
                       },
                     ),
                   ]),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -1460,7 +1436,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Widgets
+// UI Sub-components
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _SectionLabel extends StatelessWidget {
@@ -1470,14 +1446,14 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 24, bottom: 8),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 28, bottom: 12),
       child: Text(
-        title,
-        style: TextStyle(
+        title.toUpperCase(),
+        style: GoogleFonts.inter(
           fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Colors.blueGrey.shade400,
-          letterSpacing: 1.2,
+          fontWeight: FontWeight.w800,
+          color: _kTextSecondary,
+          letterSpacing: 1.5,
         ),
       ),
     );
@@ -1494,9 +1470,9 @@ class _CardGroup extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200, width: 0.8),
+          color: _kCardBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _kBorder, width: 0.8),
         ),
         child: Column(children: children),
       ),
@@ -1504,9 +1480,6 @@ class _CardGroup extends StatelessWidget {
   }
 }
 
-/// A single info row inside a card group.
-/// Shows [label] on the left, [value] + optional [trailing] on the right.
-/// Optionally accepts [onTap] to make the row tappable.
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
@@ -1522,37 +1495,33 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final trailingWidget = trailing ??
-        Icon(Icons.chevron_right, size: 20, color: Colors.grey.shade400);
-
     final row = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
-          // Label stays compact on the left
           Text(
             label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey.shade800,
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(width: 12),
-
-          // Value fills remaining space, right-aligned
           Expanded(
             child: Text(
               value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.blueGrey.shade400,
+              style: GoogleFonts.inter(
+                color: _kTextSecondary,
+                fontSize: 15,
               ),
               textAlign: TextAlign.right,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 4),
-          trailingWidget,
+          const SizedBox(width: 8),
+          trailing ?? const Icon(Icons.chevron_right, size: 18, color: _kTextSecondary),
         ],
       ),
     );
@@ -1560,7 +1529,7 @@ class _InfoRow extends StatelessWidget {
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: row,
       );
     }
@@ -1568,7 +1537,14 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-/// Gender selection option tile used inside the gender BottomSheet.
+class _CustomDivider extends StatelessWidget {
+  const _CustomDivider();
+  @override
+  Widget build(BuildContext context) {
+    return Divider(height: 1, indent: 20, endIndent: 20, color: _kBorder);
+  }
+}
+
 class _GenderOptionTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1586,47 +1562,34 @@ class _GenderOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? _kLime.withOpacity(0.1) : _kBg,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.green.shade300 : Colors.grey.shade300,
+            color: isSelected ? _kLime : _kBorder,
             width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 24,
-              color: isSelected ? Colors.green : Colors.grey.shade600,
-            ),
-            const SizedBox(width: 12),
+            Icon(icon, color: isSelected ? _kLime : Colors.white70, size: 24),
+            const SizedBox(width: 16),
             Text(
               label,
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 fontSize: 16,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? Colors.black87 : Colors.grey.shade700,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? _kLime : Colors.white,
               ),
             ),
             const Spacer(),
-            isSelected
-                ? const Icon(Icons.check_circle, color: Colors.green, size: 22)
-                : Icon(Icons.radio_button_unchecked,
-                    color: Colors.grey.shade400, size: 22),
+            Icon(
+              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: isSelected ? _kLime : Colors.white24,
+              size: 22,
+            ),
           ],
         ),
       ),
@@ -1634,7 +1597,6 @@ class _GenderOptionTile extends StatelessWidget {
   }
 }
 
-/// Activity level option tile used inside _showActivityLevelSheet.
 class _ActivityOptionTile extends StatelessWidget {
   final String label;
   final String? subtitle;
@@ -1652,76 +1614,49 @@ class _ActivityOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? _kLime.withOpacity(0.1) : _kBg,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.green.shade300 : Colors.grey.shade300,
+            color: isSelected ? _kLime : _kBorder,
             width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
         ),
         child: Row(
           children: [
-            // Activity icon indicator
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.green.withValues(alpha: 0.1)
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.directions_run,
-                size: 22,
-                color: isSelected ? Colors.green : Colors.grey.shade500,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Label and subtitle
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 15,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected ? Colors.black87 : Colors.grey.shade700,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                      color: isSelected ? _kLime : Colors.white,
                     ),
                   ),
                   if (subtitle != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle!,
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: Colors.grey.shade500,
+                        color: _kTextSecondary,
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            // Selection indicator
-            isSelected
-                ? const Icon(Icons.check_circle, color: Colors.green, size: 22)
-                : Icon(Icons.radio_button_unchecked,
-                    color: Colors.grey.shade400, size: 22),
+            const SizedBox(width: 12),
+            Icon(
+              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: isSelected ? _kLime : Colors.white24,
+              size: 22,
+            ),
           ],
         ),
       ),

@@ -1,31 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/theme_cubit.dart';
 import '../../../../auth/logic/auth_bloc.dart';
 import '../../../../auth/logic/auth_event.dart';
 
+// ── Dark theme constants ────────────────────────────────────────────────────
+const Color _kBg = Color(0xFF060708);
+const Color _kCardBg = Color(0xFF1A1D23);
+const Color _kLime = Color(0xFFE2FF54);
+const Color _kBorder = Color(0xFF2A2D35);
+const Color _kTextSecondary = Color(0xFF8A8F9D);
+const Color _kError = Color(0xFFFF5252);
+
 /// System settings screen accessible from the gear icon on the Profile tab.
-///
-/// Sections:
-///   1. General — notifications, language, theme, about
-///   2. Account — change password, delete account, logout
 class SystemSettingsScreen extends StatelessWidget {
   const SystemSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: _kBg,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Cài đặt hệ thống',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 40),
@@ -37,31 +47,31 @@ class SystemSettingsScreen extends StatelessWidget {
             _CardGroup(
               children: [
                 _SettingsTile(
-                  icon: Icons.notifications_outlined,
+                  icon: PhosphorIcons.bell(),
                   title: 'Thông báo',
                   onTap: () {
                     // TODO: Navigate to notification settings
                   },
                 ),
-                const Divider(height: 1, indent: 56),
+                const _CustomDivider(),
                 _SettingsTile(
-                  icon: Icons.language,
+                  icon: PhosphorIcons.globe(),
                   title: 'Ngôn ngữ',
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         'Tiếng Việt',
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
+                        style: GoogleFonts.inter(
+                          color: _kTextSecondary,
                           fontSize: 14,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
+                      const Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: Colors.grey.shade400,
+                        color: _kTextSecondary,
                       ),
                     ],
                   ),
@@ -69,7 +79,7 @@ class SystemSettingsScreen extends StatelessWidget {
                     // TODO: Open language selection
                   },
                 ),
-                const Divider(height: 1, indent: 56),
+                const _CustomDivider(),
                 BlocBuilder<ThemeCubit, ThemeMode>(
                   builder: (context, currentMode) {
                     final label = switch (currentMode) {
@@ -78,23 +88,23 @@ class SystemSettingsScreen extends StatelessWidget {
                       ThemeMode.system => 'Hệ thống',
                     };
                     return _SettingsTile(
-                      icon: Icons.dark_mode_outlined,
+                      icon: currentMode == ThemeMode.dark ? PhosphorIcons.moon() : PhosphorIcons.sun(),
                       title: 'Theme',
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             label,
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
+                            style: GoogleFonts.inter(
+                              color: _kTextSecondary,
                               fontSize: 14,
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(
+                          const Icon(
                             Icons.chevron_right,
                             size: 20,
-                            color: Colors.grey.shade400,
+                            color: _kTextSecondary,
                           ),
                         ],
                       ),
@@ -102,9 +112,9 @@ class SystemSettingsScreen extends StatelessWidget {
                     );
                   },
                 ),
-                const Divider(height: 1, indent: 56),
+                const _CustomDivider(),
                 _SettingsTile(
-                  icon: Icons.info_outline,
+                  icon: PhosphorIcons.info(),
                   title: 'Thông tin ứng dụng',
                   onTap: () {
                     showAboutDialog(
@@ -123,24 +133,24 @@ class SystemSettingsScreen extends StatelessWidget {
             _CardGroup(
               children: [
                 _SettingsTile(
-                  icon: Icons.lock_outline,
+                  icon: PhosphorIcons.lockKey(),
                   title: 'Đổi mật khẩu',
                   onTap: () => _showChangePasswordDialog(context),
                 ),
-                const Divider(height: 1, indent: 56),
+                const _CustomDivider(),
                 _SettingsTile(
-                  icon: Icons.delete_outline,
-                  iconColor: AppColors.error,
+                  icon: PhosphorIcons.userMinus(),
+                  iconColor: _kError,
                   title: 'Xóa tài khoản',
-                  titleColor: AppColors.error,
+                  titleColor: _kError,
                   onTap: () => _showDeleteAccountDialog(context),
                 ),
-                const Divider(height: 1, indent: 56),
+                const _CustomDivider(),
                 _SettingsTile(
-                  icon: Icons.logout,
-                  iconColor: AppColors.error,
+                  icon: PhosphorIcons.signOut(),
+                  iconColor: _kError,
                   title: 'Đăng xuất',
-                  titleColor: AppColors.error,
+                  titleColor: _kError,
                   showChevron: false,
                   onTap: () {
                     context
@@ -161,6 +171,7 @@ class SystemSettingsScreen extends StatelessWidget {
   void _showThemePicker(BuildContext context, ThemeMode current) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: const Color(0xFF121419),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -171,18 +182,19 @@ class SystemSettingsScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
                     'Chọn giao diện',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
                 _ThemeOption(
-                  icon: Icons.light_mode_outlined,
+                  icon: PhosphorIcons.sun(),
                   label: 'Sáng',
                   isSelected: current == ThemeMode.light,
                   onTap: () {
@@ -191,7 +203,7 @@ class SystemSettingsScreen extends StatelessWidget {
                   },
                 ),
                 _ThemeOption(
-                  icon: Icons.dark_mode_outlined,
+                  icon: PhosphorIcons.moon(),
                   label: 'Tối',
                   isSelected: current == ThemeMode.dark,
                   onTap: () {
@@ -200,7 +212,7 @@ class SystemSettingsScreen extends StatelessWidget {
                   },
                 ),
                 _ThemeOption(
-                  icon: Icons.settings_suggest_outlined,
+                  icon: PhosphorIcons.gearSix(),
                   label: 'Theo hệ thống',
                   isSelected: current == ThemeMode.system,
                   onTap: () {
@@ -208,6 +220,7 @@ class SystemSettingsScreen extends StatelessWidget {
                     Navigator.pop(sheetContext);
                   },
                 ),
+                const SizedBox(height: 12),
               ],
             ),
           ),
@@ -223,26 +236,44 @@ class SystemSettingsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Đổi mật khẩu'),
-          content: const Text(
+          backgroundColor: _kCardBg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Đổi mật khẩu',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
             'Chức năng đổi mật khẩu sẽ gửi email xác nhận đến địa chỉ email của bạn.',
+            style: GoogleFonts.inter(color: _kTextSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy'),
+              child: Text(
+                'Hủy',
+                style: GoogleFonts.inter(color: _kTextSecondary, fontWeight: FontWeight.w600),
+              ),
             ),
             FilledButton(
               onPressed: () {
                 // TODO: Trigger password reset email via AuthBloc
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Đã gửi email đổi mật khẩu!'),
+                  SnackBar(
+                    backgroundColor: _kCardBg,
+                    content: Text(
+                      'Đã gửi email đổi mật khẩu!',
+                      style: GoogleFonts.inter(color: Colors.white),
+                    ),
                   ),
                 );
               },
-              child: const Text('Gửi email'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _kLime,
+                foregroundColor: _kBg,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text('Gửi email', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -257,18 +288,27 @@ class SystemSettingsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          icon: const Icon(Icons.warning_amber_rounded,
-              color: AppColors.error, size: 48),
-          title: const Text('Xóa tài khoản vĩnh viễn?'),
-          content: const Text(
+          backgroundColor: _kCardBg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          icon: Icon(PhosphorIcons.warningCircle(), color: _kError, size: 48),
+          title: Text(
+            'Xóa tài khoản vĩnh viễn?',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
             'Hành động này KHÔNG THỂ HOÀN TÁC. '
             'Toàn bộ dữ liệu tập luyện, dinh dưỡng và hồ sơ cá nhân '
             'của bạn sẽ bị xóa vĩnh viễn.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(color: _kTextSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy'),
+              child: Text(
+                'Hủy',
+                style: GoogleFonts.inter(color: _kTextSecondary, fontWeight: FontWeight.w600),
+              ),
             ),
             FilledButton(
               onPressed: () {
@@ -276,9 +316,11 @@ class SystemSettingsScreen extends StatelessWidget {
                 Navigator.pop(ctx);
               },
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.error,
+                backgroundColor: _kError,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('Xóa tài khoản'),
+              child: Text('Xóa tài khoản', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -291,33 +333,29 @@ class SystemSettingsScreen extends StatelessWidget {
 // Widgets
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/// Section label above each card group.
 class _SectionLabel extends StatelessWidget {
   final String title;
-
   const _SectionLabel({required this.title});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 8),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 24, bottom: 8),
       child: Text(
-        title,
-        style: TextStyle(
+        title.toUpperCase(),
+        style: GoogleFonts.inter(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Colors.grey.shade500,
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w800,
+          color: _kTextSecondary,
+          letterSpacing: 1.2,
         ),
       ),
     );
   }
 }
 
-/// White rounded container grouping multiple [_SettingsTile]s.
 class _CardGroup extends StatelessWidget {
   final List<Widget> children;
-
   const _CardGroup({required this.children});
 
   @override
@@ -326,9 +364,9 @@ class _CardGroup extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200, width: 0.8),
+          color: _kCardBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _kBorder, width: 0.8),
         ),
         child: Column(children: children),
       ),
@@ -336,7 +374,6 @@ class _CardGroup extends StatelessWidget {
   }
 }
 
-/// Individual tile inside a [_CardGroup].
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final Color? iconColor;
@@ -358,35 +395,38 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final effectiveIconColor = iconColor ?? theme.colorScheme.onSurface;
-    final effectiveTitleColor = titleColor ?? theme.colorScheme.onSurface;
-
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: effectiveIconColor, size: 22),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: (iconColor ?? Colors.white).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: iconColor ?? Colors.white, size: 20),
+      ),
       title: Text(
         title,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          fontWeight: FontWeight.w500,
-          color: effectiveTitleColor,
+        style: GoogleFonts.inter(
+          fontWeight: FontWeight.w600,
+          color: titleColor ?? Colors.white,
+          fontSize: 15,
         ),
       ),
       trailing: trailing ??
           (showChevron
-              ? Icon(
+              ? const Icon(
                   Icons.chevron_right,
                   size: 20,
-                  color: Colors.grey.shade400,
+                  color: _kTextSecondary,
                 )
               : null),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     );
   }
 }
 
-/// Radio-like option in the theme picker bottom sheet.
 class _ThemeOption extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -402,15 +442,28 @@ class _ThemeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: theme.colorScheme.onSurface),
-      title: Text(label),
+      leading: Icon(icon, color: isSelected ? _kLime : Colors.white),
+      title: Text(
+        label,
+        style: GoogleFonts.inter(
+          color: isSelected ? _kLime : Colors.white,
+          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        ),
+      ),
       trailing: isSelected
-          ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+          ? const Icon(Icons.check_circle, color: _kLime)
           : null,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
     );
+  }
+}
+
+class _CustomDivider extends StatelessWidget {
+  const _CustomDivider();
+  @override
+  Widget build(BuildContext context) {
+    return Divider(height: 1, indent: 60, color: _kBorder);
   }
 }

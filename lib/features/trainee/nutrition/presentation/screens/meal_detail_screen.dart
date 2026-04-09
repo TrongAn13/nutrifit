@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:percent_indicator/percent_indicator.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../../../core/utils/health_metrics_utils.dart';
 import '../../../../auth/data/models/user_model.dart';
@@ -9,6 +10,19 @@ import '../../../tracking/data/models/daily_log_model.dart';
 import '../../logic/nutrition_bloc.dart';
 import '../../logic/nutrition_event.dart';
 import '../../logic/nutrition_state.dart';
+import 'meal_notification_screen.dart';
+
+// ── Dark theme constants ────────────────────────────────────────────────────
+const Color _kBg = Color(0xFF060708);
+const Color _kCardBg = Color(0xFF1A1D23);
+const Color _kLime = Color(0xFFE2FF54);
+const Color _kBorder = Color(0xFF2A2D35);
+const Color _kTextSecondary = Color(0xFF8A8F9D);
+
+// Macro badge colors
+const Color _kProteinColor = Color(0xFFFF8A80);
+const Color _kFatColor = Color(0xFFFFD54F);
+const Color _kCarbsColor = Color(0xFFB388FF);
 
 /// Displays detailed information about a specific meal slot for a given date.
 ///
@@ -47,15 +61,22 @@ class MealDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: _kBg,
       appBar: _buildAppBar(context),
       body: BlocBuilder<NutritionBloc, NutritionState>(
         builder: (context, state) {
           if (state is NutritionLoading || state is NutritionInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: _kLime),
+            );
           }
           if (state is NutritionError) {
-            return Center(child: Text('Lỗi: ${state.message}'));
+            return Center(
+              child: Text(
+                'Lỗi: ${state.message}',
+                style: GoogleFonts.inter(color: Colors.white70),
+              ),
+            );
           }
           final loaded = state as NutritionLoaded;
           final dailyLog = loaded.dailyLog;
@@ -157,32 +178,42 @@ class MealDetailScreen extends StatelessWidget {
   }
 
   AppBar _buildAppBar(BuildContext context) {
-    final theme = Theme.of(context);
     return AppBar(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: _kBg,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => context.pop(),
+      scrolledUnderElevation: 0,
+      leading: GestureDetector(
+        onTap: () => context.pop(),
+        child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
       ),
       centerTitle: true,
       title: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: _kCardBg,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _kBorder),
         ),
         child: Text(
           '$mealName • ${date.day}/${date.month}',
-          style: theme.textTheme.bodyMedium?.copyWith(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Colors.white,
+            fontSize: 14,
           ),
         ),
       ),
       actions: [
-        IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () {}),
+        IconButton(
+          icon: Icon(PhosphorIcons.gearSix(), color: Colors.white, size: 22),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MealNotificationScreen()),
+            );
+          },
+        ),
       ],
     );
   }
@@ -215,7 +246,6 @@ class _MealGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final percent = targetCalories > 0
         ? ((consumedCalories / targetCalories) * 100).round()
         : 0;
@@ -231,8 +261,9 @@ class _MealGoalCard extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             'MỤC TIÊU BỮA',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: Colors.grey[600],
+            style: GoogleFonts.inter(
+              color: _kTextSecondary,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
             ),
@@ -244,15 +275,9 @@ class _MealGoalCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: _kCardBg,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Border.all(color: _kBorder),
           ),
           child: Column(
             children: [
@@ -265,15 +290,17 @@ class _MealGoalCard extends StatelessWidget {
                         children: [
                           TextSpan(
                             text: '${consumedCalories.toInt()}',
-                            style: theme.textTheme.headlineSmall?.copyWith(
+                            style: GoogleFonts.inter(
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF4CAF50),
+                              color: _kLime,
+                              fontSize: 24,
                             ),
                           ),
                           TextSpan(
                             text: ' / $targetCalories Calo',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
+                            style: GoogleFonts.inter(
+                              color: _kTextSecondary,
+                              fontSize: 14,
                             ),
                           ),
                         ],
@@ -287,17 +314,16 @@ class _MealGoalCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: percent > 100
-                          ? Colors.red.shade50
-                          : Colors.green.shade50,
+                          ? Colors.redAccent.withOpacity(0.15)
+                          : _kLime.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '$percent%',
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
-                        color: percent > 100
-                            ? Colors.red.shade700
-                            : Colors.green.shade700,
+                        fontSize: 12,
+                        color: percent > 100 ? Colors.redAccent : _kLime,
                       ),
                     ),
                   ),
@@ -305,47 +331,42 @@ class _MealGoalCard extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // ── Progress bar with target marker ──
+              // ── Progress bar ──
               SizedBox(
-                height: 12,
+                height: 10,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final barWidth = constraints.maxWidth;
-                    // Target marker position (clamped at bar width)
-                    final markerX = barWidth.clamp(0.0, barWidth);
-
                     return Stack(
                       children: [
                         // Background
                         Container(
-                          height: 12,
+                          height: 10,
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF4CAF50,
-                            ).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            color: _kLime.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(5),
                           ),
                         ),
-                        // Filled portion
+                        // Filled
                         FractionallySizedBox(
                           widthFactor: progress.clamp(0.0, 1.0).toDouble(),
                           child: Container(
-                            height: 12,
+                            height: 10,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(6),
+                              color: _kLime,
+                              borderRadius: BorderRadius.circular(5),
                             ),
                           ),
                         ),
-                        // Target marker line
+                        // Target marker
                         Positioned(
-                          left: markerX - 1.5,
+                          left: barWidth - 1.5,
                           top: 0,
                           bottom: 0,
                           child: Container(
                             width: 3,
                             decoration: BoxDecoration(
-                              color: Colors.black87,
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(1.5),
                             ),
                           ),
@@ -365,7 +386,7 @@ class _MealGoalCard extends StatelessWidget {
                       label: 'Protein',
                       consumed: proteinConsumed,
                       goal: proteinGoal,
-                      color: Colors.red.shade400,
+                      color: _kProteinColor,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -374,7 +395,7 @@ class _MealGoalCard extends StatelessWidget {
                       label: 'Fat',
                       consumed: fatConsumed,
                       goal: fatGoal,
-                      color: Colors.orange.shade400,
+                      color: _kFatColor,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -383,7 +404,7 @@ class _MealGoalCard extends StatelessWidget {
                       label: 'Carbs',
                       consumed: carbsConsumed,
                       goal: carbsGoal,
-                      color: Colors.purple.shade400,
+                      color: _kCarbsColor,
                     ),
                   ),
                 ],
@@ -411,7 +432,6 @@ class _MacroColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final progress = goal > 0 ? (consumed / goal).clamp(0.0, 1.0) : 0.0;
 
     return Column(
@@ -419,24 +439,33 @@ class _MacroColumn extends StatelessWidget {
       children: [
         Text(
           label,
-          style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+          style: GoogleFonts.inter(color: _kTextSecondary, fontSize: 12),
         ),
         const SizedBox(height: 6),
-        LinearPercentIndicator(
-          padding: EdgeInsets.zero,
-          lineHeight: 6,
-          percent: progress,
-          barRadius: const Radius.circular(3),
-          backgroundColor: color.withValues(alpha: 0.15),
-          progressColor: color,
-          animation: true,
-          animationDuration: 600,
+        // Progress bar
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: progress,
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           '${consumed.toInt()}/${goal.toInt()} g',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: Colors.grey[600],
+          style: GoogleFonts.inter(
+            color: _kTextSecondary,
+            fontSize: 11,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -457,7 +486,6 @@ class _LoggedFoodsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final totalGrams = entries.length * 100; // Placeholder: 100g per entry
 
     return Column(
@@ -468,8 +496,9 @@ class _LoggedFoodsCard extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             'THỰC PHẨM ĐÃ GHI',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: Colors.grey[600],
+            style: GoogleFonts.inter(
+              color: _kTextSecondary,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 1.2,
             ),
@@ -481,15 +510,9 @@ class _LoggedFoodsCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: _kCardBg,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Border.all(color: _kBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -497,12 +520,14 @@ class _LoggedFoodsCard extends StatelessWidget {
               // Header
               Text(
                 '${entries.length} thực phẩm • $totalGrams gram',
-                style: theme.textTheme.titleSmall?.copyWith(
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 14,
                 ),
               ),
               if (entries.isNotEmpty)
-                Divider(height: 24, color: Colors.grey[200]),
+                Divider(height: 24, color: _kBorder),
 
               // Entry list
               if (entries.isEmpty)
@@ -514,13 +539,14 @@ class _LoggedFoodsCard extends StatelessWidget {
                         Icon(
                           Icons.no_food_outlined,
                           size: 48,
-                          color: Colors.grey[300],
+                          color: _kTextSecondary.withOpacity(0.4),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Chưa có thực phẩm nào được ghi.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[500],
+                          style: GoogleFonts.inter(
+                            color: _kTextSecondary,
+                            fontSize: 13,
                           ),
                         ),
                       ],
@@ -532,8 +558,8 @@ class _LoggedFoodsCard extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: entries.length,
-                  separatorBuilder: (_, _) =>
-                      Divider(height: 1, color: Colors.grey[200]),
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: _kBorder),
                   itemBuilder: (_, index) {
                     final entry = entries[index];
                     return ListTile(
@@ -542,31 +568,36 @@ class _LoggedFoodsCard extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: Colors.grey[200],
+                          color: _kBg,
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _kBorder),
                         ),
                         child: Icon(
                           Icons.restaurant,
                           size: 20,
-                          color: Colors.grey[400],
+                          color: _kTextSecondary.withOpacity(0.5),
                         ),
                       ),
                       title: Text(
                         entry.name,
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 14,
                         ),
                       ),
                       subtitle: Text(
                         '${entry.calories.toInt()} Calo • 100g',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[500],
+                        style: GoogleFonts.inter(
+                          color: _kTextSecondary,
+                          fontSize: 12,
                         ),
                       ),
                       trailing: IconButton(
                         icon: Icon(
-                          Icons.delete_outline,
-                          color: Colors.grey[500],
+                          PhosphorIcons.trash(),
+                          color: Colors.redAccent.withOpacity(0.7),
+                          size: 20,
                         ),
                         onPressed: () => onDelete(index),
                       ),
@@ -595,14 +626,8 @@ class _BottomAddBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        color: _kCardBg,
+        border: Border(top: BorderSide(color: _kBorder)),
       ),
       child: SizedBox(
         width: double.infinity,
@@ -610,13 +635,13 @@ class _BottomAddBar extends StatelessWidget {
         child: FilledButton.icon(
           onPressed: onTap,
           icon: const Icon(Icons.add),
-          label: const Text(
+          label: Text(
             'Ghi thêm',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 16),
           ),
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF4CAF50),
-            foregroundColor: Colors.white,
+            backgroundColor: _kLime,
+            foregroundColor: _kBg,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
