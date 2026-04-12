@@ -1,11 +1,11 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:gif_view/gif_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../features/trainee/workout/data/models/exercise_model.dart';
 import 'exercise_favorite_store.dart';
+import '../../widgets/static_gif_thumbnail.dart';
 
 
 
@@ -210,7 +210,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
               ),
               clipBehavior: Clip.antiAlias,
               child: hasPlayableGif
-                  ? _StaticDetailGifPreview(url: _playableGifUrl)
+                  ? StaticGifThumbnail(
+                      url: _playableGifUrl,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorIcon: Icons.fitness_center_rounded,
+                      errorIconColor: Colors.white54,
+                      errorIconSize: 42,
+                    )
                   : previewUrl.startsWith('http')
                       ? Image.network(
                           previewUrl,
@@ -614,55 +621,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StaticDetailGifPreview extends StatefulWidget {
-  const _StaticDetailGifPreview({required this.url});
-
-  final String url;
-
-  @override
-  State<_StaticDetailGifPreview> createState() => _StaticDetailGifPreviewState();
-}
-
-class _StaticDetailGifPreviewState extends State<_StaticDetailGifPreview> {
-  late final GifController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = GifController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GifView.network(
-      widget.url,
-      controller: _controller,
-      autoPlay: false,
-      loop: false,
-      fit: BoxFit.cover,
-      filterQuality: FilterQuality.low,
-      onLoaded: (_) {
-        _controller.seek(0);
-        _controller.pause();
-      },
-      progressBuilder: (_) => const Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-      errorBuilder: (context, error, tryAgain) => const SizedBox.shrink(),
     );
   }
 }

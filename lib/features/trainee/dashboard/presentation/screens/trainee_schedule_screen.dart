@@ -11,19 +11,17 @@ import '../../logic/active_plan_cubit.dart';
 import '../../../workout/data/models/routine_model.dart';
 import '../../../workout/data/models/workout_history_model.dart';
 import '../../../workout/data/models/workout_plan_model.dart';
-import '../../../workout/data/repositories/workout_repository.dart';
 import '../../../workout/presentation/screens/workout_ready_screen.dart';
 import '../../../workout/presentation/screens/workout_record_screen.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Constants
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 const Color _kBg = Color(0xFF060708);
 const Color _kCardBg = Color(0xFF1B1D22);
 const Color _kLime = Color(0xFFD7FF1F);
 const Color _kSkipRed = Color(0xFFFF3B30);
-const Color _kTextGrey = Color(0xFFA0A0A0);
 const Color _kBorderColor = Color(0xFF333333);
 
 const List<String> _kWeekHeaders = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -44,7 +42,6 @@ class _MyScheduleScreenState extends State<MyScheduleScreen> {
   late DateTime _displayedMonth;
   late DateTime _selectedDate;
   late final ActivePlanCubit _activePlanCubit;
-  late final WorkoutRepository _workoutRepository;
   late Future<List<WorkoutHistoryModel>> _historiesFuture;
 
   @override
@@ -53,16 +50,13 @@ class _MyScheduleScreenState extends State<MyScheduleScreen> {
     final now = DateTime.now();
     _displayedMonth = DateTime(now.year, now.month);
     _selectedDate = DateTime(now.year, now.month, now.day);
-    _workoutRepository = WorkoutRepository();
-    _historiesFuture = _workoutRepository.getWorkoutHistories();
-    _activePlanCubit = ActivePlanCubit(
-      workoutRepository: _workoutRepository,
-    )..loadActivePlan();
+    _activePlanCubit = ActivePlanCubit.fromContext(context)..loadActivePlan();
+    _historiesFuture = _activePlanCubit.getWorkoutHistories();
   }
 
   void _reloadAllHistories() {
     setState(() {
-      _historiesFuture = _workoutRepository.getWorkoutHistories();
+      _historiesFuture = _activePlanCubit.getWorkoutHistories();
     });
   }
 
@@ -258,9 +252,9 @@ class _MyScheduleScreenState extends State<MyScheduleScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Legend Dot
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _LegendDot extends StatelessWidget {
   const _LegendDot({required this.color, required this.label});
@@ -292,9 +286,9 @@ class _LegendDot extends StatelessWidget {
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Calendar Month Grid
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _CalendarMonthGrid extends StatelessWidget {
   const _CalendarMonthGrid({
@@ -422,13 +416,11 @@ class _CalendarMonthGrid extends StatelessWidget {
                     (activePlanId == null || h.planId == activePlanId));
                 
                 final dateOnly = DateTime(date.year, date.month, date.day);
-                final todayOnly = DateTime(today.year, today.month, today.day);
                 final planStartOnly = plan != null ? DateTime(plan!.createdAt.year, plan!.createdAt.month, plan!.createdAt.day) : DateTime(2000);
                 final planEndOnly = plan != null
                   ? planStartOnly.add(Duration(days: (plan!.totalWeeks * 7) - 1))
                   : DateTime(2100);
                 
-                final bool isPast = dateOnly.isBefore(todayOnly);
                 final bool isAfterStart = !dateOnly.isBefore(planStartOnly);
                 final bool isBeforeOrOnEnd = !dateOnly.isAfter(planEndOnly);
                 final bool isWithinPlanRange = isAfterStart && isBeforeOrOnEnd;
@@ -457,9 +449,9 @@ class _CalendarMonthGrid extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Calendar Day Cell
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _CalendarDayCell extends StatelessWidget {
   const _CalendarDayCell({
@@ -486,16 +478,6 @@ class _CalendarDayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine number color
-    Color numColor;
-    if (isToday) {
-      numColor = isSelected ? Colors.black : _kLime;
-    } else if (!isCurrentMonth) {
-      numColor = Colors.white30;
-    } else {
-      numColor = Colors.white;
-    }
-
     return Container(
       height: 70, // Slightly smaller height
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -540,9 +522,9 @@ class _CalendarDayCell extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Routine Chip
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _RoutineChip extends StatelessWidget {
   const _RoutineChip({
@@ -579,9 +561,7 @@ class _RoutineChip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Bottom Card — Today's Workout
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _TodayWorkoutBottomCard extends StatefulWidget {
   const _TodayWorkoutBottomCard({
@@ -600,12 +580,16 @@ class _TodayWorkoutBottomCard extends StatefulWidget {
 }
 
 class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
-  late final WorkoutRepository _workoutRepository;
+  late ActivePlanCubit _activePlanCubit;
+  bool _hasBoundCubit = false;
 
   @override
-  void initState() {
-    super.initState();
-    _workoutRepository = WorkoutRepository();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasBoundCubit) {
+      _activePlanCubit = context.read<ActivePlanCubit>();
+      _hasBoundCubit = true;
+    }
   }
 
   void _reloadHistories() {
@@ -628,7 +612,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     );
 
     try {
-      await _workoutRepository.saveWorkoutHistory(skipHistory);
+      await _activePlanCubit.saveWorkoutHistory(skipHistory);
       _reloadHistories();
     } catch (_) {
       if (mounted) {
@@ -641,7 +625,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
 
   Future<void> _unskipWorkout(WorkoutHistoryModel history) async {
     try {
-      await _workoutRepository.deleteWorkoutHistory(history.id);
+      await _activePlanCubit.deleteWorkoutHistory(history.id);
       _reloadHistories();
     } catch (_) {
       if (mounted) {
@@ -719,6 +703,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     );
 
     if (shouldDelete != true) return;
+    if (!mounted) return;
 
     showDialog<void>(
       context: context,
@@ -727,7 +712,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     );
 
     try {
-      await _workoutRepository.deleteWorkoutHistory(history.id);
+      await _activePlanCubit.deleteWorkoutHistory(history.id);
     } catch (_) {
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -844,7 +829,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                           onTap: () {
                             Navigator.of(ctx).pop();
                             if (isSkipped) {
-                              _unskipWorkout(todayHistory!);
+                              _unskipWorkout(todayHistory);
                             } else {
                               _skipWorkout(routine);
                             }
@@ -916,7 +901,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     );
   }
 
-  /// Shows a dialog letting the user shift upcoming workouts forward by 1–3 weeks.
+  /// Shows a dialog letting the user shift upcoming workouts forward by 1-3 weeks.
   void _showShiftDialog() {
     final now = DateTime.now();
     final todayOnly = DateTime(now.year, now.month, now.day);
@@ -1091,7 +1076,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
         createdAt: newCreatedAt,
       );
 
-      await _workoutRepository.updatePlan(updatedPlan);
+      await _activePlanCubit.updatePlan(updatedPlan);
       _reloadHistories();
 
       if (mounted) {
@@ -1184,9 +1169,11 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
       );
     }
 
+    final RoutineModel routine = todayRoutine;
+
     {
         final histories = widget.histories;
-        final todayHistory = _findTodayHistory(histories, todayRoutine!);
+        final todayHistory = _findTodayHistory(histories, routine);
         final bool hasResult = todayHistory != null && todayHistory.completionPercentage >= 0.0;
         final bool explicitSkipped = todayHistory != null && todayHistory.completionPercentage == -1.0;
         final bool hasAnyRecord = todayHistory != null;
@@ -1206,8 +1193,8 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
 
         return GestureDetector(
           onTap: () => (isSkipped)
-              ? _showRecordMenu(todayRoutine!, todayHistory, canShiftWholePlan)
-              : _openRoutine(todayRoutine!, todayHistory),
+              ? _showRecordMenu(routine, todayHistory, canShiftWholePlan)
+              : _openRoutine(routine, todayHistory),
           child: Container(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
             decoration: BoxDecoration(
@@ -1219,8 +1206,8 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                 // Status button
                 GestureDetector(
                   onTap: () => (isSkipped)
-                      ? _showRecordMenu(todayRoutine!, todayHistory, canShiftWholePlan)
-                      : _openRoutine(todayRoutine!, todayHistory),
+                      ? _showRecordMenu(routine, todayHistory, canShiftWholePlan)
+                      : _openRoutine(routine, todayHistory),
                   child: _StatusPulseButton(
                     hasResult: hasResult,
                     isSkipped: isSkipped,
@@ -1244,7 +1231,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        todayRoutine.name,
+                        routine.name,
                         style: GoogleFonts.inter(
                           color: isSkipped ? _kSkipRed : Colors.white,
                           fontSize: 14,
@@ -1259,7 +1246,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                 ),
                 IconButton(
                   onPressed: () => _showRecordMenu(
-                    todayRoutine!,
+                    routine,
                     todayHistory,
                     canShiftWholePlan,
                   ),
@@ -1283,10 +1270,10 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     if (widget.plan.imageUrl.isNotEmpty) {
       if (widget.plan.imageUrl.startsWith('assets/')) {
         return Image.asset(widget.plan.imageUrl, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _fallbackThumbnail());
+            errorBuilder: (context, error, stackTrace) => _fallbackThumbnail());
       }
       return Image.asset(widget.plan.imageUrl, fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _fallbackThumbnail());
+          errorBuilder: (context, error, stackTrace) => _fallbackThumbnail());
     }
     return _fallbackThumbnail();
   }
@@ -1299,23 +1286,21 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Menu Tile for Bottom Sheet
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _MenuTile extends StatelessWidget {
   const _MenuTile({
     required this.icon,
     required this.title,
     this.iconColor = Colors.white,
-    this.hasProBadge = false,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
   final Color iconColor;
-  final bool hasProBadge;
   final VoidCallback onTap;
 
   @override
@@ -1337,33 +1322,15 @@ class _MenuTile extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            if (hasProBadge) ...[
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD9BA8B),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'PRO',
-                  style: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 }
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Status Pulse Button
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _StatusPulseButton extends StatefulWidget {
   const _StatusPulseButton({required this.hasResult, required this.isSkipped});
@@ -1454,3 +1421,5 @@ class _StatusPulseButtonState extends State<_StatusPulseButton> with SingleTicke
     );
   }
 }
+
+

@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../logic/active_plan_cubit.dart';
 import '../../../workout/data/models/workout_history_model.dart';
 import '../../../workout/data/models/workout_plan_model.dart';
-import '../../../workout/data/repositories/workout_repository.dart';
 import '../../../workout/presentation/screens/workout_record_screen.dart';
-import '../../../../../shared/Screens/plans/user_plan_detail_screen.dart' hide Text;
+import '../../../../../shared/Screens/plans/user_plan_detail_screen.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Constants
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 const Color _kBg = Color(0xFF060708);
 const Color _kCardBg = Color(0xFF1B1D22);
 const Color _kLime = Color(0xFFD7FF1F);
 const Color _kSkipRed = Color(0xFFFF3B30);
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Workout History Screen
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 /// Displays all workout history and plans in two tabs.
 class WorkoutHistoryScreen extends StatefulWidget {
@@ -31,7 +31,7 @@ class WorkoutHistoryScreen extends StatefulWidget {
 class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  late final WorkoutRepository _repo;
+  late final ActivePlanCubit _activePlanCubit;
   late Future<List<WorkoutHistoryModel>> _historiesFuture;
   late Future<List<WorkoutPlanModel>> _plansFuture;
 
@@ -39,20 +39,21 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _repo = WorkoutRepository();
-    _historiesFuture = _repo.getWorkoutHistories();
-    _plansFuture = _repo.getAllPlans();
+    _activePlanCubit = ActivePlanCubit.fromContext(context);
+    _historiesFuture = _activePlanCubit.getWorkoutHistories();
+    _plansFuture = _activePlanCubit.getAllPlans();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _activePlanCubit.close();
     super.dispose();
   }
 
   void _reloadHistories() {
     setState(() {
-      _historiesFuture = _repo.getWorkoutHistories();
+      _historiesFuture = _activePlanCubit.getWorkoutHistories();
     });
   }
 
@@ -97,6 +98,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen>
           _WorkoutTab(
             historiesFuture: _historiesFuture,
             onDelete: _reloadHistories,
+            onDeleteHistory: _activePlanCubit.deleteWorkoutHistory,
           ),
           _PlanTab(plansFuture: _plansFuture),
         ],
@@ -105,15 +107,20 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Workout Tab
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 class _WorkoutTab extends StatelessWidget {
-  const _WorkoutTab({required this.historiesFuture, required this.onDelete});
+  const _WorkoutTab({
+    required this.historiesFuture,
+    required this.onDelete,
+    required this.onDeleteHistory,
+  });
 
   final Future<List<WorkoutHistoryModel>> historiesFuture;
   final VoidCallback onDelete;
+  final Future<void> Function(String historyId) onDeleteHistory;
 
   String _formatDuration(int totalSeconds) {
     final h = totalSeconds ~/ 3600;
@@ -163,7 +170,7 @@ class _WorkoutTab extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           itemCount: completed.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 2),
+          separatorBuilder: (context, index) => const SizedBox(height: 2),
           itemBuilder: (context, index) {
             final history = completed[index];
             return _WorkoutHistoryTile(
@@ -177,7 +184,7 @@ class _WorkoutTab extends StatelessWidget {
               },
               onDelete: () async {
                 try {
-                  await WorkoutRepository().deleteWorkoutHistory(history.id);
+                  await onDeleteHistory(history.id);
                   onDelete();
                 } catch (_) {}
               },
@@ -191,9 +198,9 @@ class _WorkoutTab extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Workout History Tile
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 class _WorkoutHistoryTile extends StatelessWidget {
   const _WorkoutHistoryTile({
@@ -219,7 +226,7 @@ class _WorkoutHistoryTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
           children: [
-            // Thumbnail — uses plan image if available
+            // Thumbnail: uses plan image if available
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: SizedBox(
@@ -228,7 +235,7 @@ class _WorkoutHistoryTile extends StatelessWidget {
                 child: Image.asset(
                   'assets/images/back.jfif',
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     color: _kCardBg,
                     child: const Icon(Icons.fitness_center_rounded, color: Colors.white24, size: 28),
                   ),
@@ -336,9 +343,9 @@ class _WorkoutHistoryTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Plan Tab
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 class _PlanTab extends StatelessWidget {
   const _PlanTab({required this.plansFuture});
@@ -375,7 +382,7 @@ class _PlanTab extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           itemCount: plans.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 2),
+          separatorBuilder: (context, index) => const SizedBox(height: 2),
           itemBuilder: (context, index) {
             final plan = plans[index];
             return _PlanTile(plan: plan);
@@ -386,9 +393,9 @@ class _PlanTab extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Plan Tile
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 class _PlanTile extends StatelessWidget {
   const _PlanTile({required this.plan});
@@ -492,7 +499,7 @@ class _PlanTile extends StatelessWidget {
       return Image.asset(
         plan.imageUrl,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _fallback(),
+        errorBuilder: (context, error, stackTrace) => _fallback(),
       );
     }
     return _fallback();
@@ -505,3 +512,5 @@ class _PlanTile extends StatelessWidget {
     );
   }
 }
+
+

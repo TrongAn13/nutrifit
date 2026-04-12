@@ -2,12 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:gif_view/gif_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../core/routes/app_router.dart';
+import '../../../../../shared/widgets/static_gif_thumbnail.dart';
 import '../../data/models/workout_history_model.dart';
 import '../../data/models/routine_model.dart';
 import '../../logic/workout_result_cubit.dart';
@@ -166,28 +166,12 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen>
     final gifUrl = exerciseGifs[exerciseName];
 
     if (gifUrl != null && gifUrl.isNotEmpty) {
-      return GifView.network(
-        gifUrl,
-        autoPlay: false, // Ensure the GIF acts as a static image
-        frameRate: 8,
-        fit: BoxFit.cover,
-        width: size,
-        height: size,
-        progressBuilder: (context) => Center(
-          child: SizedBox(
-            width: size * 0.4,
-            height: size * 0.4,
-            child: const CircularProgressIndicator(
-              strokeWidth: 2,
-              color: _kLime,
-            ),
-          ),
-        ),
-        errorBuilder: (context, error, tryAgain) => Icon(
-          Icons.fitness_center_rounded,
-          color: Colors.white.withValues(alpha: 0.3),
-          size: size * 0.45,
-        ),
+      return StaticGifThumbnail(
+        url: gifUrl,
+        size: size,
+        errorIcon: Icons.fitness_center_rounded,
+        errorIconColor: Colors.white.withValues(alpha: 0.3),
+        errorIconSize: size * 0.45,
       );
     }
 

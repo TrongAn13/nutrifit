@@ -13,10 +13,9 @@ import '../../data/models/food_model.dart';
 import 'recipe_detail_screen.dart';
 import 'components/food_quick_view_sheet.dart';
 import 'recipe_favorite_store.dart';
-import '../../data/repositories/nutrition_repository.dart';
 import '../../../tracking/data/models/daily_log_model.dart';
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
+// ---
 const Color _kBg = Color(0xFF060708);
 const Color _kCardBg = Color(0xFF1A1D23);
 const Color _kSurface = Color(0xFF12141A);
@@ -25,7 +24,7 @@ const Color _kBorder = Color(0x18FFFFFF);
 const Color _kTextSecondary = Color(0xFF8A8F9D);
 const Color _kDropdownBg = Color(0xFF1E2128);
 
-// ── Collection types ──────────────────────────────────────────────────────────
+// ---
 
 enum _CollectionType {
   customFood,
@@ -47,22 +46,9 @@ extension _CollectionTypeX on _CollectionType {
         return 'Thực phẩm đã scan';
     }
   }
-
-  IconData get phosphorIcon {
-    switch (this) {
-      case _CollectionType.customFood:
-        return PhosphorIconsRegular.cookingPot;
-      case _CollectionType.favoriteFood:
-        return PhosphorIconsRegular.heart;
-      case _CollectionType.favoriteRecipe:
-        return PhosphorIconsRegular.bookmarkSimple;
-      case _CollectionType.scannedFood:
-        return PhosphorIconsRegular.barcode;
-    }
-  }
 }
 
-// ── Screen ────────────────────────────────────────────────────────────────────
+// ---
 
 class FoodCollectionScreen extends StatefulWidget {
   const FoodCollectionScreen({super.key});
@@ -122,7 +108,7 @@ class _FoodCollectionScreenState extends State<FoodCollectionScreen> {
     );
   }
 
-  // ── AppBar ──────────────────────────────────────────────────────────────────
+  // ---
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
@@ -141,7 +127,7 @@ class _FoodCollectionScreenState extends State<FoodCollectionScreen> {
     );
   }
 
-  // ── Filter Row ──────────────────────────────────────────────────────────────
+  // ---
 
   Widget _buildFilterRow() {
     return Padding(
@@ -199,7 +185,7 @@ class _FoodCollectionScreenState extends State<FoodCollectionScreen> {
     );
   }
 
-  // ── Dropdown Overlay ────────────────────────────────────────────────────────
+  // ---
 
   Widget _buildDropdownOverlay() {
     final RenderBox? buttonBox =
@@ -286,7 +272,7 @@ class _FoodCollectionScreenState extends State<FoodCollectionScreen> {
     );
   }
 
-  // ── Body ────────────────────────────────────────────────────────────────────
+  // ---
 
   Widget _buildBody() {
     if (_selected == _CollectionType.favoriteRecipe) {
@@ -331,7 +317,7 @@ class _FoodCollectionScreenState extends State<FoodCollectionScreen> {
     return _buildEmpty();
   }
 
-  // ── Recipe Grid ─────────────────────────────────────────────────────────────
+  // ---
 
   Widget _buildRecipeGrid(List<RecipeModel> recipes) {
     return GridView.builder(
@@ -361,7 +347,7 @@ class _FoodCollectionScreenState extends State<FoodCollectionScreen> {
     );
   }
 
-  // ── Empty State ─────────────────────────────────────────────────────────────
+  // ---
 
   Widget _buildEmpty() {
     return Center(
@@ -433,7 +419,7 @@ class _FoodCollectionScreenState extends State<FoodCollectionScreen> {
   }
 }
 
-// ── Recipe card ───────────────────────────────────────────────────────────────
+// ---
 
 class _RecipeCard extends StatelessWidget {
   final RecipeModel recipe;
@@ -443,10 +429,10 @@ class _RecipeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final emoji = switch (recipe.mealTime) {
       'breakfast' => '🍳',
-      'lunch' => '🍱',
-      'dinner' => '🌙',
-      'snack' => '🫐',
-      _ => '🥗',
+      'lunch' => '🍛',
+      'dinner' => '🍽️',
+      'snack' => '🍎',
+      _ => '🍽️',
     };
 
     return GestureDetector(
@@ -464,7 +450,7 @@ class _RecipeCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Image (takes 65% of card height — keeps it roughly square visually)
+            // ---
             Expanded(
               flex: 65,
               child: Stack(
@@ -474,7 +460,7 @@ class _RecipeCard extends StatelessWidget {
                       ? Image.network(
                           recipe.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _EmojiPlaceholder(emoji: emoji),
+                          errorBuilder: (context, error, stackTrace) => _EmojiPlaceholder(emoji: emoji),
                         )
                       : _EmojiPlaceholder(emoji: emoji),
                   Positioned(
@@ -496,7 +482,7 @@ class _RecipeCard extends StatelessWidget {
                 ],
               ),
             ),
-            // ── Info
+            // ---
             Expanded(
               flex: 35,
               child: Padding(
@@ -513,7 +499,7 @@ class _RecipeCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${recipe.calories.toInt()} Calo  •  ${recipe.servings} khẩu phần',
+                      '${recipe.calories.toInt()} Calo • ${recipe.servings} khẩu phần',
                       style: GoogleFonts.inter(color: _kLime, fontSize: 10.5, fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -561,7 +547,7 @@ class _RecipeCard extends StatelessWidget {
   }
 }
 
-// ── Emoji Placeholder ─────────────────────────────────────────────────────────
+// ---
 
 class _EmojiPlaceholder extends StatelessWidget {
   final String emoji;
@@ -576,7 +562,7 @@ class _EmojiPlaceholder extends StatelessWidget {
   }
 }
 
-// ── Food Card ───────────────────────────────────────────────────────────────
+// ---
 
 class _FoodCard extends StatelessWidget {
   final FoodModel food;
@@ -608,14 +594,8 @@ class _FoodCard extends StatelessWidget {
             carbs: adjusted.carbs,
           );
           try {
-            // Use NutritionBloc if available so dashboard auto-refreshes
-            try {
-              final bloc = context.read<NutritionBloc>();
-              bloc.add(NutritionMealAdded(entry, date: date));
-            } catch (_) {
-              // Bloc not in widget tree — save directly via repository
-              await NutritionRepository().addMealEntries([entry], date: date);
-            }
+            // Save via NutritionBloc so dependent screens refresh consistently.
+            context.read<NutritionBloc>().add(NutritionMealAdded(entry, date: date));
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -865,3 +845,5 @@ class _FoodCard extends StatelessWidget {
     );
   }
 }
+
+

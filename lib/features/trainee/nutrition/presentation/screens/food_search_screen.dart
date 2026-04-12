@@ -10,7 +10,6 @@ import 'food_detail_screen.dart';
 import 'components/food_quick_view_sheet.dart';
 
 import '../../data/models/food_model.dart';
-import '../../data/repositories/nutrition_repository.dart';
 import '../../logic/food_bloc.dart';
 import '../../logic/food_state.dart';
 import '../../logic/nutrition_bloc.dart';
@@ -20,19 +19,18 @@ import '../../../tracking/data/models/daily_log_model.dart';
 import '../../data/models/recipe_model.dart';
 import 'recipe_favorite_store.dart';
 
-// ── Dark theme constants ──
+// ---
 const Color _kBg = Color(0xFF060708);
 const Color _kCardBg = Color(0xFF1A1D23);
 const Color _kSurface = Color(0xFF12141A);
 const Color _kLime = Color(0xFFE2FF54);
 const Color _kBorder = Color(0x14FFFFFF); // white 8%
 
-/// Food search screen acting as a "cart" — lets the trainee browse multiple tabs,
+// ---
 /// pick foods, and confirm them all at once for a given meal.
 ///
 /// Arguments:
-///   [mealName] – display name of the meal slot (e.g. "Bữa sáng").
-///   [date]     – the date the foods will be logged to.
+// ---
 class FoodSearchScreen extends StatefulWidget {
   final String mealName;
   final DateTime date;
@@ -62,7 +60,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
   String _selectedCategory = 'Tất cả';
   late String _currentMealName;
 
-  // ── Quick Log form controllers ──
+  // ---
   final _quickNameCtrl = TextEditingController();
   final _quickCalCtrl = TextEditingController();
   final _quickProteinCtrl = TextEditingController();
@@ -119,7 +117,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     super.dispose();
   }
 
-  // ── Cart helpers ──
+  // ---
 
   void _addToCart(FoodModel food) {
     // Generate an ID for the new meal entry
@@ -162,9 +160,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
       (_selectedFoodsByMeal[_currentMealName] ?? []).length;
 
   int get _cartTotalItems =>
-      _selectedFoodsByMeal.values.fold(0, (sum, list) => sum + list.length);
+      _selectedFoodsByMeal.values.fold(0, (total, list) => total + list.length);
 
-  /// Map Vietnamese meal name → Firestore meal type key.
+  // ---
   static const _mealKeyMap = {
     'Bữa sáng': 'breakfast',
     'Bữa trưa': 'lunch',
@@ -203,7 +201,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     if (allEntries.isEmpty) return;
 
     try {
-      await NutritionRepository().addMealEntries(allEntries, date: widget.date);
+      context.read<NutritionBloc>().add(
+            NutritionMealsAdded(allEntries, date: widget.date),
+          );
       for (final list in _selectedFoodsByMeal.values) {
         list.clear();
       }
@@ -254,14 +254,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
           appBar: _buildAppBar(context),
           body: Column(
             children: [
-              // ── Search bar + Quick actions ──
+              // ---
               _SearchAndActions(onBarcodeScan: _openBarcodeScanner),
               const SizedBox(height: 4),
 
-              // ── TabBar ──
+              // ---
               _buildTabBar(context),
 
-              // ── TabBarView ──
+              // ---
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -328,16 +328,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
             ],
           ),
 
-          // ── Bottom Cart Bar ──
+          // ---
           bottomNavigationBar: _buildBottomBar(context),
         ),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
   // AppBar
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final dateLabel = '${widget.date.day}/${widget.date.month}';
@@ -375,9 +375,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
   // TabBar
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
 
   Widget _buildTabBar(BuildContext context) {
     return Container(
@@ -408,9 +408,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
   // Bottom Cart Bar
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
 
   Widget _buildBottomBar(BuildContext context) {
     return Container(
@@ -422,7 +422,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
       child: SafeArea(
         child: Row(
           children: [
-            // ── Left: meal button with badge (current meal count only) ──
+            // ---
             Expanded(
               child: GestureDetector(
                 onTap: _showCartSheet,
@@ -482,7 +482,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
               ),
             ),
 
-            // ── Right: complete button ──
+            // ---
             FilledButton(
               onPressed: () => _onComplete(context),
               style: FilledButton.styleFrom(
@@ -507,9 +507,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
   // Cart BottomSheet
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
 
   bool _isCartSheetOpen = false;
 
@@ -544,9 +544,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
     _isCartSheetOpen = false;
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
   // Quick Log handler
-  // ─────────────────────────────────────────────────────────────────────────
+  // ---
 
   void _handleQuickLog() {
     final name = _quickNameCtrl.text.trim();
@@ -645,9 +645,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ---
 // Search Bar & Quick Actions
-// ═══════════════════════════════════════════════════════════════════════════════
+// ---
 
 class _SearchAndActions extends StatelessWidget {
   final VoidCallback? onBarcodeScan;
@@ -756,9 +756,9 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ---
 // Cart BottomSheet (Two-column layout)
-// ═══════════════════════════════════════════════════════════════════════════════
+// ---
 
 /// Custom bottom sheet displaying a meal-type sidebar and selected foods list.
 class _CartBottomSheet extends StatefulWidget {
@@ -800,7 +800,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
       widget.selectedFoodsByMeal[_selectedMeal] ?? [];
 
   double get _totalCalories =>
-      _currentList.fold(0, (sum, f) => sum + f.calories);
+      _currentList.fold(0, (total, f) => total + f.calories);
 
   @override
   Widget build(BuildContext context) {
@@ -829,7 +829,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
           Expanded(
             child: Row(
               children: [
-                // ── Left column: Meal menu (Flex 3) ──
+                // ---
                 Flexible(
                   flex: 3,
                   child: Container(
@@ -867,7 +867,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(10),
                               border: isSelected
-                                  ? Border.all(color: _kLime.withOpacity(0.3))
+                                  ? Border.all(color: _kLime.withValues(alpha: 0.3))
                                   : null,
                             ),
                             child: Row(
@@ -914,7 +914,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                   ),
                 ),
 
-                // ── Right column: Selected foods (Flex 7) ──
+                // ---
                 Flexible(
                   flex: 7,
                   child: Container(
@@ -922,7 +922,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header — shows count for THIS meal only
+                        // ---
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                           child: RichText(
@@ -951,7 +951,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                         ),
                         Divider(
                           height: 1,
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                         ),
 
                         // Food list or empty state
@@ -982,10 +982,10 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
                                     vertical: 8,
                                   ),
                                   itemCount: _currentList.length,
-                                  separatorBuilder: (_, __) => Divider(
+                                  separatorBuilder: (context, index) => Divider(
                                     height: 1,
                                     color:
-                                        Colors.white.withOpacity(0.06),
+                                        Colors.white.withValues(alpha: 0.06),
                                   ),
                                   itemBuilder: (_, index) {
                                     final food = _currentList[index];
@@ -1060,9 +1060,7 @@ class _CartBottomSheetState extends State<_CartBottomSheet> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Tab 1 — Recent
-// ═══════════════════════════════════════════════════════════════════════════════
+// ---
 
 class _RecentTab extends StatelessWidget {
   final ValueChanged<FoodModel> onAddFood;
@@ -1118,7 +1116,7 @@ class _RecentTab extends StatelessWidget {
           itemCount: recentMeals.length,
           separatorBuilder: (context, index) => Divider(
             height: 1,
-            color: Colors.white.withOpacity(0.06),
+            color: Colors.white.withValues(alpha: 0.06),
           ),
           itemBuilder: (context, index) {
             final meal = recentMeals[index];
@@ -1176,9 +1174,7 @@ class _RecentTab extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Tab 2 — Popular
-// ═══════════════════════════════════════════════════════════════════════════════
+// ---
 
 class _PopularTab extends StatelessWidget {
   final List<FoodModel> foods;
@@ -1206,7 +1202,7 @@ class _PopularTab extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Category sidebar ──
+        // ---
         SizedBox(
           width: 100,
           child: Container(
@@ -1235,7 +1231,7 @@ class _PopularTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       border: isSelected
                           ? Border.all(
-                              color: _kLime.withOpacity(0.3),
+                              color: _kLime.withValues(alpha: 0.3),
                             )
                           : null,
                     ),
@@ -1259,10 +1255,10 @@ class _PopularTab extends StatelessWidget {
         // Vertical divider
         Container(
           width: 0.5,
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
         ),
 
-        // ── Food list ──
+        // ---
         Expanded(
           child: filteredFoods.isEmpty
               ? Center(
@@ -1281,7 +1277,7 @@ class _PopularTab extends StatelessWidget {
                     vertical: 8,
                   ),
                   itemCount: filteredFoods.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  separatorBuilder: (context, index) => const SizedBox(height: 6),
                   itemBuilder: (_, index) {
                     final food = filteredFoods[index];
                     return _PopularFoodItem(
@@ -1331,7 +1327,7 @@ class _PopularFoodItem extends StatelessWidget {
                     width: 48,
                     height: 48,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                    errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
                   )
                 : _buildPlaceholder(),
           ),
@@ -1394,9 +1390,7 @@ class _PopularFoodItem extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Tab 3 — Collections
-// ═══════════════════════════════════════════════════════════════════════════════
+// ---
 
 class _CollectionsTab extends StatefulWidget {
   final ValueChanged<FoodModel> onAddFood;
@@ -1433,7 +1427,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Filter chips (scrollable) ──
+        // ---
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: SizedBox(
@@ -1441,7 +1435,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _typeLabels.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final isActive = i == _selectedType;
                 return GestureDetector(
@@ -1449,7 +1443,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isActive ? _kLime.withOpacity(0.15) : _kCardBg,
+                      color: isActive ? _kLime.withValues(alpha: 0.15) : _kCardBg,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isActive ? _kLime : _kBorder,
@@ -1481,7 +1475,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
           ),
         ),
         const SizedBox(height: 12),
-        // ── Body ──
+        // ---
         Expanded(child: _buildBody()),
       ],
     );
@@ -1551,7 +1545,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       itemCount: foods.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      separatorBuilder: (context, index) => const SizedBox(height: 6),
       itemBuilder: (_, i) {
         final food = foods[i];
         return GestureDetector(
@@ -1574,7 +1568,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                           width: 48,
                           height: 48,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
                         )
                       : _buildPlaceholder(),
                 ),
@@ -1659,9 +1653,7 @@ class _CollectionsTabState extends State<_CollectionsTab> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Tab 4 — Quick Log
-// ═══════════════════════════════════════════════════════════════════════════════
+// ---
 
 class _QuickLogTab extends StatelessWidget {
   final TextEditingController nameCtrl;
@@ -1783,3 +1775,5 @@ class _QuickLogTab extends StatelessWidget {
     );
   }
 }
+
+

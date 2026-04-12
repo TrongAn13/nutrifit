@@ -13,6 +13,7 @@ import 'core/theme/theme_cubit.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/logic/auth_bloc.dart';
 import 'features/auth/logic/auth_event.dart';
+import 'features/trainee/profile/data/repositories/profile_repository.dart';
 import 'features/trainee/workout/data/repositories/workout_repository.dart';
 import 'features/trainee/workout/logic/active_workout_cubit.dart';
 import 'firebase_options.dart';
@@ -103,6 +104,9 @@ class _NutrifitAppState extends State<NutrifitApp> {
         ),
         RepositoryProvider<WorkoutRepository>(
           create: (_) => WorkoutRepository(),
+        ),
+        RepositoryProvider<ProfileRepository>(
+          create: (_) => ProfileRepository(),
         ),
       ],
       child: MultiBlocProvider(

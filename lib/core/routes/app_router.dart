@@ -48,7 +48,7 @@ import '../../features/trainee/workout/presentation/screens/Select_exercise_scre
 import '../../features/trainee/workout/presentation/screens/edit_plan_screen.dart';
 import '../../features/trainee/workout/presentation/screens/routine_detail_screen.dart';
 import '../../shared/Screens/library/user_plans.dart';
-import '../../shared/Screens/plans/user_plan_detail_screen.dart' hide Text;
+import '../../shared/Screens/plans/user_plan_detail_screen.dart';
 
 
 /// Centralized router configuration using [GoRouter].
@@ -295,7 +295,18 @@ class AppRouter {
     GoRoute(
       path: foodCollection,
       name: 'foodCollection',
-      builder: (context, state) => const FoodCollectionScreen(),
+      builder: (context, state) {
+        final dateParam = state.uri.queryParameters['date'];
+        final date = dateParam != null
+            ? DateTime.tryParse(dateParam) ?? DateTime.now()
+            : DateTime.now();
+        return BlocProvider(
+          create: (_) => NutritionBloc(
+            nutritionRepository: NutritionRepository(),
+          )..add(NutritionLoadRequested(date)),
+          child: const FoodCollectionScreen(),
+        );
+      },
     ),
     GoRoute(
       path: recipes,

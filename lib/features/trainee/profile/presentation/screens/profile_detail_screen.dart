@@ -8,7 +8,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:vertical_weight_slider/vertical_weight_slider.dart';
 
 import '../../../../auth/data/models/user_model.dart';
-import '../../data/repositories/profile_repository.dart';
+import '../../logic/profile_cubit.dart';
 import 'allergy_selection_screen.dart';
 
 // ── Dark theme constants ────────────────────────────────────────────────────
@@ -30,19 +30,26 @@ class ProfileDetailScreen extends StatefulWidget {
 }
 
 class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
-  final _repo = ProfileRepository();
+  late final ProfileCubit _profileCubit;
   UserModel? _profile;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _profileCubit = ProfileCubit.fromContext(context);
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _profileCubit.close();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
     try {
-      final profile = await _repo.getProfile();
+      final profile = await _profileCubit.getProfile();
       if (mounted) {
         setState(() {
           _profile = profile;
@@ -502,7 +509,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         Navigator.pop(sheetCtx);
                         if (selected.isNotEmpty) {
                           try {
-                            await _repo.updateProfile(
+                            await _profileCubit.updateProfile(
                               name: _profile?.name ?? '',
                               gender: selected,
                             );
@@ -624,7 +631,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       onPressed: () async {
                         Navigator.pop(sheetCtx);
                         try {
-                          await _repo.updateProfile(
+                          await _profileCubit.updateProfile(
                             name: _profile?.name ?? '',
                             birthDate: selectedDate,
                           );
@@ -738,7 +745,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   onPressed: () async {
                     Navigator.pop(sheetCtx);
                     try {
-                      await _repo.updateProfile(
+                      await _profileCubit.updateProfile(
                         name: _profile?.name ?? '',
                         height: selectedHeight.toDouble(),
                       );
@@ -875,7 +882,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           controller.dispose();
                           Navigator.pop(sheetCtx);
                           try {
-                            await _repo.updateProfile(
+                            await _profileCubit.updateProfile(
                               name: _profile?.name ?? '',
                               weight: double.parse(w.toStringAsFixed(1)),
                             );
@@ -1027,7 +1034,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   Future<void> _saveName(String value) async {
     try {
-      await _repo.updateProfile(name: value);
+      await _profileCubit.updateProfile(name: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
@@ -1038,7 +1045,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   Future<void> _savePhone(String value) async {
     try {
-      await _repo.updateProfile(name: _profile?.name ?? '', phone: value);
+      await _profileCubit.updateProfile(name: _profile?.name ?? '', phone: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
@@ -1049,7 +1056,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   Future<void> _saveEmail(String value) async {
     try {
-      await _repo.updateProfile(name: _profile?.name ?? '');
+      await _profileCubit.updateProfile(name: _profile?.name ?? '');
       await _loadProfile();
     } catch (e) {
       if (mounted) {
@@ -1060,7 +1067,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   Future<void> _saveWorkActivity(String value) async {
     try {
-      await _repo.updateProfile(name: _profile?.name ?? '', workActivity: value);
+      await _profileCubit.updateProfile(name: _profile?.name ?? '', workActivity: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
@@ -1071,7 +1078,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   Future<void> _saveHomeActivity(String value) async {
     try {
-      await _repo.updateProfile(name: _profile?.name ?? '', homeActivity: value);
+      await _profileCubit.updateProfile(name: _profile?.name ?? '', homeActivity: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
@@ -1082,7 +1089,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   Future<void> _saveActivityLevel(String value) async {
     try {
-      await _repo.updateProfile(name: _profile?.name ?? '', activityLevel: value);
+      await _profileCubit.updateProfile(name: _profile?.name ?? '', activityLevel: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {
@@ -1093,7 +1100,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   Future<void> _saveGoal(String value) async {
     try {
-      await _repo.updateProfile(name: _profile?.name ?? '', goal: value);
+      await _profileCubit.updateProfile(name: _profile?.name ?? '', goal: value);
       await _loadProfile();
     } catch (e) {
       if (mounted) {

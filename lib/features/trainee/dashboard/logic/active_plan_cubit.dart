@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../workout/data/models/routine_model.dart';
+import '../../workout/data/models/workout_history_model.dart';
 import '../../workout/data/models/workout_plan_model.dart';
 import '../../workout/data/repositories/workout_repository.dart';
 
@@ -73,6 +75,12 @@ class ActivePlanCubit extends Cubit<ActivePlanState> {
       : _repo = workoutRepository,
         super(const ActivePlanState());
 
+  factory ActivePlanCubit.fromContext(BuildContext context) {
+    return ActivePlanCubit(
+      workoutRepository: context.read<WorkoutRepository>(),
+    );
+  }
+
   /// Load the active plan from Firestore.
   Future<void> loadActivePlan() async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
@@ -89,5 +97,30 @@ class ActivePlanCubit extends Cubit<ActivePlanState> {
         errorMessage: e.toString().replaceFirst('Exception: ', ''),
       ));
     }
+  }
+
+  /// Fetches workout histories for the current user.
+  Future<List<WorkoutHistoryModel>> getWorkoutHistories() {
+    return _repo.getWorkoutHistories();
+  }
+
+  /// Fetches all plans for the current user.
+  Future<List<WorkoutPlanModel>> getAllPlans() {
+    return _repo.getAllPlans();
+  }
+
+  /// Saves a workout history entry.
+  Future<void> saveWorkoutHistory(WorkoutHistoryModel history) {
+    return _repo.saveWorkoutHistory(history);
+  }
+
+  /// Deletes a workout history entry by id.
+  Future<void> deleteWorkoutHistory(String historyId) {
+    return _repo.deleteWorkoutHistory(historyId);
+  }
+
+  /// Updates a workout plan document.
+  Future<void> updatePlan(WorkoutPlanModel plan) {
+    return _repo.updatePlan(plan);
   }
 }

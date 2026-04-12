@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routes/app_router.dart';
-import '../../../trainee/user_coach/data/invitation_repository.dart';
+import '../../../trainee/user_coach/logic/invitation_cubit.dart';
 import '../../chat/coach_chat_list_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1018,16 +1018,19 @@ class AddClientBottomSheet extends StatefulWidget {
 
 class _AddClientBottomSheetState extends State<AddClientBottomSheet> {
   late String _connectionCode;
+  late final InvitationCubit _invitationCubit;
   final _emailCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _invitationCubit = InvitationCubit();
     _connectionCode = _generateCode();
   }
 
   @override
   void dispose() {
+    _invitationCubit.close();
     _emailCtrl.dispose();
     super.dispose();
   }
@@ -1090,7 +1093,7 @@ class _AddClientBottomSheetState extends State<AddClientBottomSheet> {
           .get();
       final coachName = coachDoc.data()?['name'] as String? ?? 'HLV';
 
-      await InvitationRepository().sendInvitation(
+      await _invitationCubit.sendInvitation(
         coachId: currentCoach.uid,
         coachName: coachName,
         toEmail: email,

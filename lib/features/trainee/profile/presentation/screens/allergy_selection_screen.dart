@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/repositories/profile_repository.dart';
+import '../../logic/profile_cubit.dart';
 
 // ── Dark theme constants ────────────────────────────────────────────────────
 const Color _kBg = Color(0xFF060708);
@@ -27,7 +27,7 @@ class AllergySelectionScreen extends StatefulWidget {
 }
 
 class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
-  final _repo = ProfileRepository();
+  late final ProfileCubit _profileCubit;
 
   // Fixed allergy lists
   static const List<String> animalAllergies = [
@@ -53,6 +53,7 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
   @override
   void initState() {
     super.initState();
+    _profileCubit = ProfileCubit.fromContext(context);
     selectedAllergies = Set<String>.from(widget.initialAllergies ?? []);
     otherController =
         TextEditingController(text: widget.initialOtherAllergies ?? '');
@@ -60,6 +61,7 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
 
   @override
   void dispose() {
+    _profileCubit.close();
     otherController.dispose();
     super.dispose();
   }
@@ -83,7 +85,7 @@ class _AllergySelectionScreenState extends State<AllergySelectionScreen> {
         allAllergies.addAll(others);
       }
 
-      await _repo.updateAllergies(allAllergies, otherText);
+      await _profileCubit.updateAllergies(allAllergies, otherText);
 
       if (mounted) {
         Navigator.pop(context, true);

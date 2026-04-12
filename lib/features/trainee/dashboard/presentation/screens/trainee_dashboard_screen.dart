@@ -10,7 +10,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../logic/active_plan_cubit.dart';
 import '../../../workout/data/models/workout_history_model.dart';
 import '../../../workout/data/models/workout_plan_model.dart';
-import '../../../workout/data/repositories/workout_repository.dart';
 import '../../../workout/presentation/screens/workout_record_screen.dart';
 import '../../../workout/presentation/screens/workout_ready_screen.dart';
 import '../../../../../core/routes/app_router.dart';
@@ -36,9 +35,7 @@ class _TraineeDashboardScreenState extends State<TraineeDashboardScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _activePlanCubit = ActivePlanCubit(
-      workoutRepository: WorkoutRepository(),
-    )..loadActivePlan();
+    _activePlanCubit = ActivePlanCubit.fromContext(context)..loadActivePlan();
   }
 
   @override
@@ -108,9 +105,9 @@ class _TraineeDashboardScreenState extends State<TraineeDashboardScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Helper to get time-based greeting
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 String _getGreeting() {
   final hour = DateTime.now().hour;
@@ -219,7 +216,6 @@ class _WeekStatusStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ActivePlanCubit, ActivePlanState>(
       builder: (context, state) {
-        final plan = state.plan;
         final todayWeekday = DateTime.now().weekday; // 1=Mon ... 7=Sun
         const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -232,7 +228,7 @@ class _WeekStatusStrip extends StatelessWidget {
             );
           },
           child: FutureBuilder<List<WorkoutHistoryModel>>(
-            future: WorkoutRepository().getWorkoutHistories(),
+            future: context.read<ActivePlanCubit>().getWorkoutHistories(),
             builder: (context, snapshot) {
               final histories = snapshot.data ?? [];
               final now = DateTime.now();
@@ -313,9 +309,7 @@ class _WeekStatusStrip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Today Workout Card — Dynamic from ActivePlanCubit
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _TodayWorkoutCard extends StatelessWidget {
   const _TodayWorkoutCard();
@@ -345,7 +339,7 @@ class _TodayWorkoutCard extends StatelessWidget {
         final exerciseCount = todayRoutine?.exercises.length ?? 0;
 
         return FutureBuilder<List<WorkoutHistoryModel>>(
-          future: WorkoutRepository().getWorkoutHistories(),
+          future: context.read<ActivePlanCubit>().getWorkoutHistories(),
           builder: (context, historySnapshot) {
             final histories = historySnapshot.data ?? const <WorkoutHistoryModel>[];
             final now = DateTime.now();
@@ -497,8 +491,8 @@ class _TodayWorkoutCard extends StatelessWidget {
                                       Navigator.of(context).push(
                                         MaterialPageRoute(
                                           builder: (_) => WorkoutReadyScreen(
-                                            routine: todayRoutine!,
-                                            planId: plan!.planId,
+                                            routine: todayRoutine,
+                                            planId: plan.planId,
                                           ),
                                         ),
                                       );
@@ -561,7 +555,7 @@ class _TodayWorkoutCard extends StatelessWidget {
         return Image.asset(
           plan.imageUrl,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Image.asset(
+          errorBuilder: (context, error, stackTrace) => Image.asset(
             'assets/images/back.jfif',
             fit: BoxFit.cover,
           ),
@@ -570,7 +564,7 @@ class _TodayWorkoutCard extends StatelessWidget {
       return Image.asset(
         plan.imageUrl,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Image.asset(
+        errorBuilder: (context, error, stackTrace) => Image.asset(
           'assets/images/back.jfif',
           fit: BoxFit.cover,
         ),
@@ -583,9 +577,9 @@ class _TodayWorkoutCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Section Header
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({
@@ -627,9 +621,9 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Schedule Card
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _ScheduleCard extends StatefulWidget {
   const _ScheduleCard();
@@ -639,14 +633,6 @@ class _ScheduleCard extends StatefulWidget {
 }
 
 class _ScheduleCardState extends State<_ScheduleCard> {
-  late final WorkoutRepository _repo;
-
-  @override
-  void initState() {
-    super.initState();
-    _repo = WorkoutRepository();
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ActivePlanCubit, ActivePlanState>(
@@ -654,7 +640,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
         final plan = state.plan;
 
         return FutureBuilder<List<WorkoutHistoryModel>>(
-          future: _repo.getWorkoutHistories(),
+          future: context.read<ActivePlanCubit>().getWorkoutHistories(),
           builder: (context, snapshot) {
             final histories = snapshot.data ?? [];
 
@@ -763,9 +749,9 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Dynamic Calendar Grid
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _DynamicCalendarGrid extends StatelessWidget {
   const _DynamicCalendarGrid({required this.plan, required this.histories});
@@ -785,7 +771,7 @@ class _DynamicCalendarGrid extends StatelessWidget {
 
     return Column(
       children: [
-        // Week headers row — all centered within their 1/7 slot
+        // ---
         Row(
           children: List.generate(7, (i) {
             final isHighlighted = i == todayWeekdayIndex;
@@ -879,9 +865,9 @@ class _DynamicCalendarGrid extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Dynamic Day Cell
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _DynamicDayCell extends StatelessWidget {
   const _DynamicDayCell({
@@ -969,9 +955,9 @@ class _DynamicDayCell extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Dynamic Consistency Summary
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _DynamicConsistency extends StatelessWidget {
   const _DynamicConsistency({required this.plan, required this.histories});
@@ -1203,9 +1189,9 @@ class _SemiCircleGaugePainter extends CustomPainter {
       oldDelegate.progress != progress;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Animated Play Button
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _AnimatedPlayButton extends StatefulWidget {
   const _AnimatedPlayButton();
@@ -1279,9 +1265,9 @@ class _AnimatedPlayButtonState extends State<_AnimatedPlayButton> with SingleTic
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Schedule Plan Tile
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _SchedulePlanTile extends StatelessWidget {
   const _SchedulePlanTile();
@@ -1316,7 +1302,7 @@ class _SchedulePlanTile extends StatelessWidget {
                         width: 56,
                         height: 56,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Image.asset(
+                        errorBuilder: (context, error, stackTrace) => Image.asset(
                           'assets/images/back.jfif',
                           width: 56,
                           height: 56,
@@ -1370,9 +1356,9 @@ class _SchedulePlanTile extends StatelessWidget {
 
 
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // Following Plans Card
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _FollowingPlansCard extends StatelessWidget {
   const _FollowingPlansCard();
@@ -1401,7 +1387,7 @@ class _FollowingPlansCard extends StatelessWidget {
         }
 
         return FutureBuilder<List<WorkoutHistoryModel>>(
-          future: WorkoutRepository().getWorkoutHistories(),
+          future: context.read<ActivePlanCubit>().getWorkoutHistories(),
           builder: (context, snapshot) {
             final now = DateTime.now();
             final startDate = DateTime(
@@ -1441,7 +1427,7 @@ class _FollowingPlansCard extends StatelessWidget {
                           ? Image.asset(
                               plan.imageUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Image.asset(
+                              errorBuilder: (context, error, stackTrace) => Image.asset(
                                 'assets/images/default_plan.jpg',
                                 fit: BoxFit.cover,
                               ),
@@ -1540,9 +1526,9 @@ class _MetaChip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // History Card
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 
 class _HistoryCard extends StatelessWidget {
   const _HistoryCard();
@@ -1564,7 +1550,7 @@ class _HistoryCard extends StatelessWidget {
     return BlocBuilder<ActivePlanCubit, ActivePlanState>(
       builder: (context, state) {
         return FutureBuilder<List<WorkoutHistoryModel>>(
-          future: WorkoutRepository().getWorkoutHistories(),
+          future: context.read<ActivePlanCubit>().getWorkoutHistories(),
           builder: (context, snapshot) {
             final histories = snapshot.data ?? const <WorkoutHistoryModel>[];
             if (histories.isEmpty) {
@@ -1584,7 +1570,7 @@ class _HistoryCard extends StatelessWidget {
                               width: 72,
                               height: 72,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Image.asset(
+                              errorBuilder: (context, error, stackTrace) => Image.asset(
                                 'assets/images/back.jfif',
                                 width: 72,
                                 height: 72,
@@ -1665,7 +1651,7 @@ class _HistoryCard extends StatelessWidget {
                                     width: 60,
                                     height: 60,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Image.asset(
+                                    errorBuilder: (context, error, stackTrace) => Image.asset(
                                       'assets/images/back.jfif',
                                       width: 60,
                                       height: 60,
@@ -1729,3 +1715,5 @@ class _HistoryCard extends StatelessWidget {
     );
   }
 }
+
+
