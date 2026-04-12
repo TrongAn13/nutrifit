@@ -688,30 +688,33 @@ class _MyPlanDetailScreenState extends State<MyPlanDetailScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.circle, size: 10, color: _kAccent),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Done ($completedCapped)',
-                    style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
-                  ),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.circle, size: 10, color: Color(0xFFFF3B30)),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Skipped ($skipped)',
-                    style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
-                  ),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.circle, size: 10, color: Colors.white54),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Upcoming ($upcoming)',
-                    style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
-                  ),
-                ],
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.circle, size: 10, color: _kAccent),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Done ($completedCapped)',
+                      style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
+                    ),
+                    const SizedBox(width: 16),
+                    const Icon(Icons.circle, size: 10, color: Color(0xFFFF3B30)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Skipped ($skipped)',
+                      style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
+                    ),
+                    const SizedBox(width: 16),
+                    const Icon(Icons.circle, size: 10, color: Colors.white54),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Upcoming ($upcoming)',
+                      style: GoogleFonts.inter(color: Colors.white60, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
               Row(

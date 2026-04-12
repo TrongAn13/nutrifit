@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/widgets.dart';
 
 import '../data/models/routine_model.dart';
 import '../data/models/workout_plan_model.dart';
@@ -74,6 +75,16 @@ class PlanDetailCubit extends Cubit<PlanDetailState> {
     required WorkoutPlanModel initialPlan,
   }) : _repo = workoutRepository,
        super(PlanDetailState(plan: initialPlan));
+
+  factory PlanDetailCubit.fromContext({
+    required BuildContext context,
+    required WorkoutPlanModel initialPlan,
+  }) {
+    return PlanDetailCubit(
+      workoutRepository: context.read<WorkoutRepository>(),
+      initialPlan: initialPlan,
+    );
+  }
 
   /// Switch the active routine view.
   void selectRoutine(int index) {

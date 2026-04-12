@@ -3,14 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../../shared/Screens/library/exercise_detail_screen.dart';
+import '../../../../../shared/widgets/static_gif_thumbnail.dart';
 import '../../data/models/exercise_model.dart';
 import '../../logic/exercise_library_bloc.dart';
 import '../../logic/exercise_library_event.dart';
 import '../../logic/exercise_library_state.dart';
 
-const Color _kBg = Color(0xFFFAFAFA);
-const Color _kSearchBg = Colors.white;
-const Color _kBackBtnBg = Color(0xFFF7F8F8);
+const Color _kBg = Color(0xFF060708);
+const Color _kSearchBg = Color(0xFF1B1D22);
+const Color _kBackBtnBg = Colors.white10;
+const Color _kAccent = Color(0xFFD7FF1F);
+const Color _kCardBg = Color(0xFF1B1D22);
 
 /// Exercise selection screen with discovery list, selected preview bar,
 /// and bottom action button.
@@ -91,7 +94,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                 child: const Icon(
                   Icons.arrow_back_ios_new,
                   size: 16,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -101,7 +104,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             style: GoogleFonts.inter(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: Colors.black,
+              color: Colors.white,
             ),
           ),
           actions: [
@@ -109,7 +112,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
               onPressed: () {},
               icon: const Icon(
                 Icons.star_border,
-                color: Colors.black,
+                color: Colors.white,
                 size: 22,
               ),
             ),
@@ -119,7 +122,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                 onPressed: () {},
                 icon: const Icon(
                   Icons.filter_alt_outlined,
-                  color: Colors.black,
+                  color: Colors.white,
                   size: 22,
                 ),
               ),
@@ -137,7 +140,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(12),
+                      color: Colors.black.withAlpha(25),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -145,16 +148,16 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                 ),
                 child: TextField(
                   controller: _searchController,
-                  style: GoogleFonts.inter(fontSize: 14),
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'Search',
                     hintStyle: GoogleFonts.inter(
                       fontSize: 14,
-                      color: Colors.grey.shade400,
+                      color: Colors.white54,
                     ),
-                    prefixIcon: Icon(
+                    prefixIcon: const Icon(
                       Icons.search,
-                      color: Colors.grey.shade400,
+                      color: Colors.white54,
                       size: 20,
                     ),
                     border: InputBorder.none,
@@ -164,7 +167,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                     ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20),
+                            icon: const Icon(Icons.clear, size: 20, color: Colors.white54),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _searchQuery = '');
@@ -186,7 +189,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -213,23 +216,38 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                               height: 56,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                color: Colors.grey.shade200,
+                                color: Colors.white10,
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: exercise.imageUrl.isNotEmpty
-                                  ? Image.asset(
-                                      exercise.imageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          const Icon(
-                                        Icons.fitness_center_rounded,
-                                        size: 24,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.fitness_center_rounded,
-                                      size: 24,
-                                    ),
+                              child: exercise.gifUrl.isNotEmpty
+                                  ? StaticGifThumbnail(url: exercise.gifUrl, size: 56)
+                                  : exercise.imageUrl.isNotEmpty
+                                      ? (exercise.imageUrl.startsWith('assets/')
+                                          ? Image.asset(
+                                              exercise.imageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) =>
+                                                  const Icon(
+                                                Icons.fitness_center_rounded,
+                                                size: 24,
+                                                color: _kAccent,
+                                              ),
+                                            )
+                                          : Image.network(
+                                              exercise.imageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) =>
+                                                  const Icon(
+                                                Icons.fitness_center_rounded,
+                                                size: 24,
+                                                color: _kAccent,
+                                              ),
+                                            ))
+                                      : const Icon(
+                                          Icons.fitness_center_rounded,
+                                          size: 24,
+                                          color: _kAccent,
+                                        ),
                             ),
                             Positioned(
                               top: 0,
@@ -244,14 +262,10 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                                     color: Colors.redAccent,
                                   ),
                                   child: const Center(
-                                    child: Text(
-                                      '-',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        height: 1,
-                                      ),
+                                    child: Icon(
+                                      Icons.remove,
+                                      color: Colors.white,
+                                      size: 16,
                                     ),
                                   ),
                                 ),
@@ -290,9 +304,9 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                     return Center(
                       child: Text(
                         'Không tìm thấy bài tập nào',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
-                          color: Colors.grey.shade600,
+                          color: Colors.white54,
                         ),
                       ),
                     );
@@ -329,10 +343,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                         ? null
                         : () => Navigator.of(context).pop(_selectedExercises),
                     style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: _kAccent,
+                      foregroundColor: Colors.black,
                       disabledBackgroundColor:
-                          colorScheme.primary.withValues(alpha: 0.35),
+                          _kAccent.withAlpha(80),
+                      disabledForegroundColor: Colors.black38,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -343,7 +358,6 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -380,15 +394,15 @@ class _ExerciseSelectCard extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _kCardBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+            color: isSelected ? _kAccent : Colors.transparent,
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(8),
+              color: Colors.black.withAlpha(25),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -401,24 +415,36 @@ class _ExerciseSelectCard extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: Colors.blue.withAlpha(25),
+                color: Colors.white10,
               ),
               clipBehavior: Clip.antiAlias,
-              child: exercise.imageUrl.isNotEmpty
-                  ? Image.asset(
-                      exercise.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.fitness_center_rounded,
-                        color: Colors.blue,
-                        size: 28,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.fitness_center_rounded,
-                      color: Colors.blue,
-                      size: 28,
-                    ),
+              child: exercise.gifUrl.isNotEmpty
+                  ? StaticGifThumbnail(url: exercise.gifUrl, size: 60)
+                  : exercise.imageUrl.isNotEmpty
+                      ? (exercise.imageUrl.startsWith('assets/')
+                          ? Image.asset(
+                              exercise.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.fitness_center_rounded,
+                                color: _kAccent,
+                                size: 28,
+                              ),
+                            )
+                          : Image.network(
+                              exercise.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.fitness_center_rounded,
+                                color: _kAccent,
+                                size: 28,
+                              ),
+                            ))
+                      : const Icon(
+                          Icons.fitness_center_rounded,
+                          color: _kAccent,
+                          size: 28,
+                        ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -430,7 +456,7 @@ class _ExerciseSelectCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: Colors.white,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -440,7 +466,7 @@ class _ExerciseSelectCard extends StatelessWidget {
                     subtitle.isEmpty ? 'Chưa có thông tin' : subtitle,
                     style: GoogleFonts.inter(
                       fontSize: 13,
-                      color: Colors.grey.shade500,
+                      color: Colors.white54,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -468,7 +494,7 @@ class _ExerciseSelectCard extends StatelessWidget {
                 height: 32,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300, width: 1.2),
+                  border: Border.all(color: Colors.white24, width: 1.2),
                 ),
                 child: Center(
                   child: Text(
@@ -476,7 +502,7 @@ class _ExerciseSelectCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black87,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -501,24 +527,23 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+            const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: colorScheme.error),
+              style: const TextStyle(color: Colors.redAccent),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onRetry,
+              style: FilledButton.styleFrom(backgroundColor: _kAccent, foregroundColor: Colors.black),
               icon: const Icon(Icons.refresh),
               label: const Text('Thử lại'),
             ),

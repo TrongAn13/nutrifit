@@ -9,8 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../data/models/workout_history_model.dart';
 import '../../data/models/routine_model.dart';
 import '../../data/models/exercise_model.dart';
-import '../../data/repositories/workout_repository.dart';
 import '../../logic/active_workout_cubit.dart';
+import 'package:gif_view/gif_view.dart';
 import 'workout_result_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +75,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   /// Exercise index currently shown in the inline log panel.
   int _logExerciseIndex = 0;
 
+  /// Cached GIF controllers for playback management.
+  Map<String, GifController> _gifControllers = {};
+
   @override
   void initState() {
     super.initState();
@@ -104,8 +107,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           // Restore phase
           switch (cubit.state.minimizedPhaseIndex) {
             case 0:
-              _phase = _ExercisePhase.prepare;
-              _startPreparePhase();
+              _phase = _ExercisePhase.exercise;
+              _startExercisePhase();
               break;
             case 1:
               _phase = _ExercisePhase.exercise;
@@ -120,9 +123,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         } else if (_timelineItems.isNotEmpty) {
           _startTimelineItem(0);
         }
+            unawaited(
+              cubit.loadExerciseGifs(
+                cubit.state.routine!.exercises.map((e) => e.exerciseName),
+              ),
+            );
       }
     });
   }
+
+  // Removed _loadGifs method as it is no longer needed.
 
   void _onTimelineScroll() {
     if (!_timelineScroll.hasClients || _timelineItems.isEmpty) return;
@@ -220,12 +230,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (item.type == _TimelineType.rest) {
       _startRestPhase(item.restSeconds);
     } else {
-      // Show prepare phase 10s only for the first set of the exercise
-      if (item.setIndex == 0) {
-        _startPreparePhase();
-      } else {
-        _startExercisePhase();
-      }
+      _startExercisePhase();
     }
     _scrollTimeline();
   }
@@ -613,9 +618,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
 
     try {
-      await WorkoutRepository().saveWorkoutHistory(history);
-    } catch (e) {
-      // Ignore failure
+      await cubit.saveWorkoutHistory(history);
+      await cubit.markWorkoutCompleted();
+    } catch (_) {
+      // Ignore write failures because Firestore may sync later.
     }
 
     if (context.mounted) {
@@ -694,13 +700,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   maintainSize: true,
                   child: _buildTimelineStrip(),
                 ),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  switchInCurve: Curves.easeOut,
-                  switchOutCurve: Curves.easeIn,
-                  child: _isLogPanelVisible
-                      ? _buildInlineLogPanel(context.read<ActiveWorkoutCubit>())
-                      : const SizedBox.shrink(),
+                Flexible(
+                  flex: _isLogPanelVisible ? 1 : 0,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    child: _isLogPanelVisible
+                        ? _buildInlineLogPanel(context.read<ActiveWorkoutCubit>())
+                        : const SizedBox.shrink(),
+                  ),
                 ),
                 // ── Bottom Control Bar ──
                 _buildBottomBar(state),
@@ -786,7 +795,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       final exercise = viewedItem.exercise!;
       switch (_phase) {
         case _ExercisePhase.prepare:
-          return _buildPrepareContent(exercise, viewedItem);
         case _ExercisePhase.exercise:
           return _buildExerciseContent(exercise, viewedItem);
         case _ExercisePhase.rest:
@@ -849,12 +857,65 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             ],
             const SizedBox(height: 32),
             Container(
-              
               width: 200, height: 200,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(16)),
-              child: Center(child: Icon(Icons.fitness_center_rounded, size: 80, color: Colors.white.withValues(alpha: 0.15))),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
+              clipBehavior: Clip.antiAlias,
+              child: _buildGifWidget(
+                exercise: exercise,
+                isPlaying: false, // Static preview is never playing
+                size: 200,
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGifWidget({
+    required ExerciseEntry exercise,
+    required bool isPlaying,
+    required double size,
+  }) {
+    final exerciseGifs = context.read<ActiveWorkoutCubit>().state.exerciseGifs;
+
+    if (!exerciseGifs.containsKey(exercise.exerciseName)) {
+      return Center(
+        child: Icon(
+          Icons.fitness_center_rounded,
+          size: size * 0.4,
+          color: Colors.white24,
+        ),
+      );
+    }
+    
+    _gifControllers[exercise.exerciseName] ??= GifController();
+    final controller = _gifControllers[exercise.exerciseName]!;
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isPlaying) {
+        if (controller.status == GifStatus.paused || controller.status == GifStatus.stopped) {
+          controller.play();
+        }
+      } else {
+        if (controller.status == GifStatus.playing) {
+          controller.pause();
+        }
+      }
+    });
+
+    return GifView.network(
+        exerciseGifs[exercise.exerciseName]!,
+      controller: controller,
+      autoPlay: isPlaying,
+      frameRate: 8,
+      fit: BoxFit.cover,
+      progressBuilder: (context) => const Center(child: CircularProgressIndicator(strokeWidth: 2, color: _kLime)),
+      errorBuilder: (context, error, tryAgain) => Center(
+        child: Icon(
+          Icons.fitness_center_rounded,
+          size: size * 0.4,
+          color: Colors.white24,
         ),
       ),
     );
@@ -953,6 +1014,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildExerciseContent(ExerciseEntry exercise, _TimelineItem item) {
+    final bool isPlaying = _exerciseTimer?.isActive == true;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
@@ -988,20 +1051,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               ),
             ],
             const SizedBox(height: 32),
-            // Exercise image placeholder
+            // Exercise image / GIF
             Container(
               width: 220,
               height: 220,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Center(
-                child: Icon(
-                  Icons.fitness_center_rounded,
-                  size: 90,
-                  color: Colors.grey.shade400,
-                ),
+              clipBehavior: Clip.antiAlias,
+              child: _buildGifWidget(
+                exercise: exercise,
+                isPlaying: isPlaying,
+                size: 220,
               ),
             ),
           ],
@@ -1405,8 +1467,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 42,
@@ -1547,8 +1610,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ─────────────────────────────────────────────────────────────────────────
   // Bottom Control Bar
@@ -1687,7 +1751,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper widgets & models
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _BottomBarIcon extends StatelessWidget {
   const _BottomBarIcon({required this.icon, required this.onTap});
@@ -1832,115 +1895,97 @@ class _SetRowWidgetState extends State<_SetRowWidget> {
   @override
   Widget build(BuildContext context) {
     final isCompleted = widget.setData.isCompleted;
-    // High contrast theme: solid white inputs with black text
-    final bgColor = Colors.white;
+    
+    final textStyle = GoogleFonts.inter(
+      color: isCompleted ? Colors.white54 : Colors.white, 
+      fontSize: 20, 
+      fontWeight: FontWeight.w600,
+    );
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Set number
-        Container(
-           width: 38,
-           height: 44,
-           decoration: BoxDecoration(
-             border: Border.all(color: Colors.white54, width: 1),
-             borderRadius: BorderRadius.circular(8),
-             color: isCompleted ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
-           ),
-           alignment: Alignment.center,
-           child: Text('${widget.setIndex + 1}', style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
-        ),
-        const SizedBox(width: 12),
-        // Weight
-        Expanded(
-          flex: 4,
-          child: Column(
-            children: [
-              Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.black12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                   children: [
-                     Expanded(
-                       child: TextField(
-                         controller: _weightCtrl,
-                         focusNode: _weightFocus,
-                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                         textAlign: TextAlign.center,
-                         style: GoogleFonts.inter(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w700),
-                         decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
-                       )
-                     ),
-                     Text('kg', style: GoogleFonts.inter(color: Colors.black54, fontSize: 13, fontWeight: FontWeight.w600)),
-                   ]
-                )
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: isCompleted ? const Color(0xFFD7FF1F).withValues(alpha: 0.04) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Set number
+          Container(
+             width: 40,
+             height: 40,
+             decoration: BoxDecoration(
+               color: isCompleted ? const Color(0xFFD7FF1F) : Colors.white.withValues(alpha: 0.08),
+               borderRadius: BorderRadius.circular(10),
+             ),
+             alignment: Alignment.center,
+             child: Text('${widget.setIndex + 1}', style: GoogleFonts.inter(color: isCompleted ? Colors.black : Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(width: 12),
+          // Weight
+          Expanded(
+            flex: 4,
+            child: TextField(
+              controller: _weightCtrl,
+              focusNode: _weightFocus,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              style: textStyle,
+              decoration: InputDecoration(
+                border: InputBorder.none, 
+                isDense: true, 
+                contentPadding: EdgeInsets.zero,
+                hintText: '-',
+                hintStyle: textStyle.copyWith(color: Colors.white24),
               ),
-              const SizedBox(height: 4),
-              Text('include bar', style: GoogleFonts.inter(color: Colors.white30, fontSize: 10)),
-            ]
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        // Reps
-        Expanded(
-          flex: 3,
-          child: Container(
-            height: 44,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.black12),
+          const SizedBox(width: 8),
+          // Reps
+          Expanded(
+            flex: 3,
+            child: TextField(
+              controller: _repsCtrl,
+              focusNode: _repsFocus,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              style: textStyle,
+              decoration: InputDecoration(
+                border: InputBorder.none, 
+                isDense: true, 
+                contentPadding: EdgeInsets.zero,
+                hintText: '-',
+                hintStyle: textStyle.copyWith(color: Colors.white24),
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-               children: [
-                 Expanded(
-                   child: TextField(
-                     controller: _repsCtrl,
-                     focusNode: _repsFocus,
-                     keyboardType: TextInputType.number,
-                     textAlign: TextAlign.center,
-                     style: GoogleFonts.inter(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w700),
-                     decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
-                   )
-                 ),
-                 Text('reps', style: GoogleFonts.inter(color: Colors.black54, fontSize: 13, fontWeight: FontWeight.w600)),
-               ]
-            )
           ),
-        ),
-        const SizedBox(width: 16),
-        // Check button
-        GestureDetector(
-          onTap: () {
-             if (isCompleted) return;
-             if (widget.onComplete != null) {
-               widget.onComplete!.call();
-             } else {
-               widget.cubit.completeSet(widget.exerciseIndex, widget.setIndex);
-             }
-          },
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isCompleted ? const Color(0xFFD7FF1F) : Colors.white.withValues(alpha: 0.1),
-              border: Border.all(color: isCompleted ? const Color(0xFFD7FF1F) : Colors.transparent, width: 1.5),
+          const SizedBox(width: 16),
+          // Check button
+          GestureDetector(
+            onTap: () {
+               if (widget.onComplete != null) {
+                 widget.onComplete!.call();
+               } else {
+                 widget.cubit.completeSet(widget.exerciseIndex, widget.setIndex);
+               }
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isCompleted ? const Color(0xFFD7FF1F) : Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.check_rounded,
+                color: isCompleted ? Colors.black : Colors.white38,
+                size: 22,
+              ),
             ),
-            child: Icon(
-              Icons.check_rounded,
-              size: 24,
-              color: isCompleted ? Colors.black : Colors.white38,
-            ),
-          )
-        )
-      ]
+          ),
+        ],
+      ),
     );
   }
 }

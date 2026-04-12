@@ -14,9 +14,12 @@ import '../../logic/auth_state.dart';
 // Shared Design Tokens
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Color _kAccent = Color(0xFF92A3FD);
-const Color _kAccentSecondary = Color(0xFF9DCEFF);
-const Color _kFieldBg = Color(0xFFF7F8F8);
+const Color _kAccent = Color(0xFFD7FF1F); // Lime
+const Color _kFieldBg = Color(0xFF1B1D22); // Dark card
+const Color _kScreenBg = Color(0xFF060708); // Dark background
+const Color _kTextPrimary = Colors.white;
+const Color _kTextSecondary = Colors.white70;
+const Color _kOutline = Colors.white24;
 
 /// Redesigned login screen following the latest Figma spec.
 ///
@@ -76,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: _kScreenBg,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -93,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Hey there,',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        color: Colors.grey.shade600,
+                        color: _kTextSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -103,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black,
+                        color: _kTextPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -139,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           _obscurePassword
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
-                          color: Colors.grey[400],
+                          color: _kTextSecondary,
                           size: 20,
                         ),
                         onPressed: () =>
@@ -160,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: TextButton(
                         onPressed: () {},
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey.shade500,
+                          foregroundColor: _kTextSecondary,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           textStyle: GoogleFonts.inter(
                             fontSize: 12,
@@ -202,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           "Don't have an account yet? ",
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: _kTextSecondary,
                           ),
                         ),
                         GestureDetector(
@@ -254,46 +257,38 @@ class _LoginScreenState extends State<LoginScreen> {
       validator: validator,
       style: GoogleFonts.inter(
         fontSize: 14,
-        color: Colors.grey.shade800,
+        color: _kTextPrimary,
       ),
       decoration: InputDecoration(
-        // 1. Bật tính năng đổ màu nền và truyền màu _kFieldBg vào đây
         filled: true,
         fillColor: _kFieldBg,
-
         hintText: hint,
         hintStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: Colors.grey[400],
+          color: _kTextSecondary.withAlpha(140),
         ),
-        prefixIcon: Icon(icon, color: Colors.grey[400], size: 20),
+        prefixIcon: Icon(icon, color: _kTextSecondary, size: 20),
         suffixIcon: suffix,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
         errorStyle: GoogleFonts.inter(fontSize: 11),
-
-        // 2. Thiết lập viền và bo góc trực tiếp trong InputDecoration
-        // Viền trạng thái bình thường
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300, width: 1), // Có thể đổi màu viền nếu muốn
+          borderSide: const BorderSide(color: Colors.transparent, width: 1),
         ),
-        // Viền khi người dùng bấm vào để gõ
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+          borderSide: const BorderSide(color: _kAccent, width: 1.5),
         ),
-        // Viền khi có lỗi báo đỏ (như trong ảnh bạn gửi)
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
-        // Viền khi có lỗi và người dùng đang bấm vào để sửa
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
     );
@@ -308,17 +303,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       height: 50,
       decoration: BoxDecoration(
+        color: _kAccent,
         borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          colors: [_kAccent, _kAccentSecondary],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _kAccent.withAlpha(80),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: ElevatedButton(
         onPressed: onPressed,
@@ -341,14 +327,14 @@ class _LoginScreenState extends State<LoginScreen> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 18, color: Colors.white),
+                  Icon(icon, size: 18, color: Colors.black),
                   const SizedBox(width: 8),
                   Text(
                     label,
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   ),
                 ],
@@ -360,18 +346,18 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildOrDivider() {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.grey.shade300)),
+        const Expanded(child: Divider(color: _kOutline)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             'Or',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey.shade500,
+              color: _kTextSecondary,
             ),
           ),
         ),
-        Expanded(child: Divider(color: Colors.grey.shade300)),
+        const Expanded(child: Divider(color: _kOutline)),
       ],
     );
   }
@@ -392,8 +378,9 @@ class _LoginScreenState extends State<LoginScreen> {
       width: 50,
       height: 50,
       decoration: BoxDecoration(
+        color: _kFieldBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: _kOutline),
       ),
       child: Center(
         child: SvgPicture.asset(

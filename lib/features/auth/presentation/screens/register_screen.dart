@@ -14,9 +14,12 @@ import '../../logic/auth_state.dart';
 // Shared Design Tokens
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Color _kAccent = Color(0xFF92A3FD);
-const Color _kAccentSecondary = Color(0xFF9DCEFF);
-const Color _kFieldBg = Color(0xFFF7F8F8);
+const Color _kAccent = Color(0xFFD7FF1F); // Lime
+const Color _kFieldBg = Color(0xFF1B1D22); // Dark card
+const Color _kScreenBg = Color(0xFF060708); // Dark background
+const Color _kTextPrimary = Colors.white;
+const Color _kTextSecondary = Colors.white70;
+const Color _kOutline = Colors.white24;
 
 /// Redesigned registration screen following the latest Figma spec.
 ///
@@ -96,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: _kScreenBg,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -113,7 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       'Hey there,',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        color: Colors.grey.shade600,
+                        color: _kTextSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -123,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black,
+                        color: _kTextPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -178,7 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _obscurePassword
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
-                          color: Colors.grey[400],
+                          color: _kTextSecondary,
                           size: 20,
                         ),
                         onPressed: () => setState(
@@ -230,7 +233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           'Already have an account? ',
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: _kTextSecondary,
                           ),
                         ),
                         GestureDetector(
@@ -279,10 +282,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? _kAccent : Colors.white,
+          color: isSelected ? _kAccent : _kFieldBg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? _kAccent : Colors.grey.shade300,
+            color: isSelected ? _kAccent : _kOutline,
           ),
         ),
         child: Center(
@@ -291,7 +294,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? Colors.white : Colors.grey.shade600, height: 1.4
+              color: isSelected ? Colors.black : _kTextSecondary,
+              height: 1.4,
             ),
           ),
         ),
@@ -313,7 +317,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Checkbox(
             value: _agreedToTerms,
             onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
-            side: BorderSide(color: Colors.grey.shade400),
+            side: const BorderSide(color: _kOutline),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
@@ -327,7 +331,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               text: 'By continuing you accept our ',
               style: GoogleFonts.inter(
                 fontSize: 11,
-                color: Colors.grey.shade500,
+                color: _kTextSecondary,
                 height: 1.5,
               ),
               children: [
@@ -335,7 +339,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   text: 'Privacy Policy',
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: Colors.grey.shade500,
+                    color: _kTextSecondary,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -344,7 +348,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   text: 'Term of Use',
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: Colors.grey.shade500,
+                    color: _kTextSecondary,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -382,7 +386,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       validator: validator,
       style: GoogleFonts.inter(
         fontSize: 14,
-        color: Colors.grey.shade800,
+        color: _kTextPrimary,
       ),
       decoration: InputDecoration(
         filled: true,
@@ -390,9 +394,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         hintText: hint,
         hintStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: Colors.grey[400],
+          color: _kTextSecondary.withAlpha(140),
         ),
-        prefixIcon: Icon(icon, color: Colors.grey[400], size: 20),
+        prefixIcon: Icon(icon, color: _kTextSecondary, size: 20),
         suffixIcon: suffix,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -401,19 +405,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         errorStyle: GoogleFonts.inter(fontSize: 11),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+          borderSide: const BorderSide(color: Colors.transparent, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
     );
@@ -428,17 +432,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Container(
       height: 50,
       decoration: BoxDecoration(
+        color: _kAccent,
         borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          colors: [_kAccent, _kAccentSecondary],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _kAccent.withAlpha(80),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: ElevatedButton(
         onPressed: onPressed,
@@ -461,14 +456,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 18, color: Colors.white),
+                  Icon(icon, size: 18, color: Colors.black),
                   const SizedBox(width: 8),
                   Text(
                     label,
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   ),
                 ],
@@ -480,18 +475,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildOrDivider() {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.grey.shade300)),
+        const Expanded(child: Divider(color: _kOutline)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             'Or',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey.shade500,
+              color: _kTextSecondary,
             ),
           ),
         ),
-        Expanded(child: Divider(color: Colors.grey.shade300)),
+        const Expanded(child: Divider(color: _kOutline)),
       ],
     );
   }
@@ -512,8 +507,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       width: 50,
       height: 50,
       decoration: BoxDecoration(
+        color: _kFieldBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: _kOutline),
       ),
       child: Center(
         child: SvgPicture.asset(

@@ -58,7 +58,7 @@ class HomePage extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: Navigate to onboarding / auth screen
+                    // TODO: Navigate to auth screen
                   },
                   child: const Text('Bắt đầu'),
                 ),

@@ -101,6 +101,7 @@ class _NavigationShellState extends State<_NavigationShell> {
     return BlocBuilder<BottomNavCubit, int>(
       builder: (context, currentIndex) {
         return Scaffold(
+          backgroundColor: const Color(0xFF060708),
           body: Column(
             children: [
               Expanded(

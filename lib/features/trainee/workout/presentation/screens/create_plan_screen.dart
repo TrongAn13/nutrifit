@@ -10,7 +10,6 @@ import 'package:uuid/uuid.dart';
 import '../../data/models/exercise_model.dart';
 import '../../data/models/routine_model.dart';
 import '../../data/models/workout_plan_model.dart';
-import '../../data/repositories/workout_repository.dart';
 import '../../logic/plan_detail_cubit.dart';
 import '../widgets/plan_statistics_bottom_sheet.dart';
 
@@ -29,6 +28,11 @@ const _dayLabelsMap = {
 ///
 /// Step 1: Basic plan info (name, description, weeks, training days).
 /// Step 2: Plan detail editor (add exercises, manage routines, save).
+
+const Color _kBg = Color(0xFF060708);
+const Color _kCardBg = Color(0xFF1B1D22);
+const Color _kLime = Color(0xFFD7FF1F);
+
 class CreatePlanScreen extends StatefulWidget {
   final bool isTemplate;
 
@@ -115,8 +119,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     );
 
     // Create cubit for plan detail editing
-    _planDetailCubit = PlanDetailCubit(
-      workoutRepository: WorkoutRepository(),
+    _planDetailCubit = PlanDetailCubit.fromContext(
+      context: context,
       initialPlan: newPlan,
     );
 
@@ -153,15 +157,15 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
   Widget _buildBasicInfoStep() {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _kBg,
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           child: FilledButton(
             onPressed: _onContinueToDetail,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF92A3FD),
-              foregroundColor: Colors.white,
+              backgroundColor: _kLime,
+              foregroundColor: Colors.black,
               minimumSize: const Size.fromHeight(56),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(28),
@@ -201,26 +205,26 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black87,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _nameController,
-                        style: GoogleFonts.inter(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14, color: Colors.white),
                         decoration: InputDecoration(
                           hintText: 'Plan name',
                           hintStyle: GoogleFonts.inter(
-                            color: Colors.grey.shade500,
+                            color: Colors.white24,
                             fontSize: 14,
                           ),
                           prefixIcon: Icon(
                             Icons.fitness_center_rounded,
-                            color: Colors.grey.shade400,
+                            color: Colors.white24,
                             size: 20,
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF7F8F8),
+                          fillColor: _kCardBg,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 18,
@@ -238,23 +242,23 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _descController,
-                        style: GoogleFonts.inter(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14, color: Colors.white),
                         decoration: InputDecoration(
                           hintText: 'Description (optional)',
                           hintStyle: GoogleFonts.inter(
-                            color: Colors.grey.shade500,
+                            color: Colors.white24,
                             fontSize: 14,
                           ),
                           prefixIcon: Padding(
                             padding: const EdgeInsets.only(bottom: 60),
                             child: Icon(
                               Icons.description_outlined,
-                              color: Colors.grey.shade400,
+                              color: Colors.white24,
                               size: 22,
                             ),
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF7F8F8),
+                          fillColor: _kCardBg,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 18,
@@ -276,7 +280,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Colors.black87,
+                              color: Colors.white,
                             ),
                           ),
                           Container(
@@ -285,7 +289,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF92A3FD),
+                              color: _kCardBg,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -294,7 +298,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                   'Weekly',
                                   style: GoogleFonts.inter(
                                     fontSize: 10,
-                                    color: Colors.white,
+                                    color: Colors.white70,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -302,7 +306,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                 const Icon(
                                   Icons.keyboard_arrow_down_rounded,
                                   size: 14,
-                                  color: Colors.white,
+                                  color: Colors.white54,
                                 ),
                               ],
                             ),
@@ -317,7 +321,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black87,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -338,14 +342,14 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8F8),
+        color: _kCardBg,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           Icon(
             Icons.fitness_center_rounded,
-            color: Colors.grey.shade400,
+            color: Colors.white24,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -354,7 +358,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
               'Weeks: $_totalWeeks',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: Colors.white70,
               ),
             ),
           ),
@@ -377,7 +381,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8F8),
+        color: _kCardBg,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -394,16 +398,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? const Color(0xFF92A3FD) : Colors.white,
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF92A3FD).withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : [],
+                color: isSelected ? _kLime : Colors.white.withValues(alpha: 0.05),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -456,7 +451,7 @@ class _PlanDetailStep extends StatelessWidget {
         final routine = state.currentRoutine;
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: _kBg,
           bottomNavigationBar: SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
@@ -465,8 +460,8 @@ class _PlanDetailStep extends StatelessWidget {
                     ? null
                     : () => context.read<PlanDetailCubit>().savePlan(),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF92A3FD),
-                  foregroundColor: Colors.white,
+                  backgroundColor: _kLime,
+                  foregroundColor: Colors.black,
                   minimumSize: const Size.fromHeight(56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
@@ -487,6 +482,7 @@ class _PlanDetailStep extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
+                          color: Colors.black,
                         ),
                       ),
               ),
@@ -789,7 +785,7 @@ class _StepIndicator extends StatelessWidget {
       height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isActive ? const Color(0xFF92A3FD) : const Color(0xFFE8E8E8),
+        color: isActive ? _kLime : Colors.white.withValues(alpha: 0.1),
       ),
       child: Center(
         child: isActive && step < currentStep
@@ -797,7 +793,7 @@ class _StepIndicator extends StatelessWidget {
             : Text(
                 '${step + 1}',
                 style: GoogleFonts.inter(
-                  color: isActive ? Colors.white : Colors.grey.shade500,
+                  color: isActive ? Colors.black : Colors.white54,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -811,7 +807,7 @@ class _StepIndicator extends StatelessWidget {
     return Container(
       height: 3,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF92A3FD) : const Color(0xFFE8E8E8),
+        color: isActive ? _kLime : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -840,7 +836,7 @@ class _CreatePlanHeader extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: Colors.black87,
+              color: Colors.white,
             ),
           ),
           _buildSquareBtn(Icons.more_horiz_rounded, () {}),
@@ -856,10 +852,10 @@ class _CreatePlanHeader extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: const Color(0xFFF4F5F5),
+          color: _kCardBg,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Icon(icon, color: Colors.black87, size: 20),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
@@ -881,13 +877,13 @@ class _ControlButton extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: isEnabled ? Colors.white : Colors.grey.shade200,
+          color: isEnabled ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
           size: 16,
-          color: isEnabled ? Colors.black87 : Colors.grey.shade400,
+          color: isEnabled ? Colors.white : Colors.white24,
         ),
       ),
     );
@@ -912,7 +908,7 @@ class _PlanBannerSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _kCardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -932,7 +928,7 @@ class _PlanBannerSection extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1C29),
+                  color: Colors.white,
                 ),
               ),
               const Spacer(),
@@ -941,7 +937,7 @@ class _PlanBannerSection extends StatelessWidget {
                 icon: const Icon(Icons.image_outlined, size: 16),
                 label: Text(
                   imageUrl.isEmpty ? 'Add image' : 'Edit image',
-                  style: GoogleFonts.inter(fontSize: 12),
+                  style: GoogleFonts.inter(fontSize: 12, color: _kLime),
                 ),
               ),
             ],
@@ -951,7 +947,7 @@ class _PlanBannerSection extends StatelessWidget {
             height: 140,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFF6F7FB),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
             ),
             clipBehavior: Clip.antiAlias,
@@ -1004,7 +1000,7 @@ class _CompactHeader extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_ios, size: 16, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios, size: 16, color: Colors.white),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -1013,7 +1009,7 @@ class _CompactHeader extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF1A1C29),
+              color: Colors.white,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -1029,8 +1025,8 @@ class _CompactHeader extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             textStyle: GoogleFonts.inter(fontSize: 12),
-            side: BorderSide(color: Colors.grey.shade300),
-            foregroundColor: Colors.grey.shade700,
+            side: BorderSide(color: Colors.white24),
+            foregroundColor: Colors.white70,
           ),
         ),
       ],
@@ -1054,11 +1050,11 @@ class _ActiveRoutineCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _kCardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1073,12 +1069,12 @@ class _ActiveRoutineCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFDECE8),
+                    color: _kLime.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.calendar_today_rounded,
-                    color: Color(0xFF92A3FD),
+                    color: _kLime,
                     size: 18,
                   ),
                 ),
@@ -1092,7 +1088,7 @@ class _ActiveRoutineCard extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1A1C29),
+                          color: Colors.white,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1102,7 +1098,7 @@ class _ActiveRoutineCard extends StatelessWidget {
                         '${routine?.exercises.length ?? 0} exercises',
                         style: GoogleFonts.inter(
                           fontSize: 13,
-                          color: Colors.grey.shade600,
+                          color: Colors.white54,
                         ),
                       ),
                     ],
@@ -1155,13 +1151,13 @@ class _CompactActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: Colors.grey.shade700),
+            Icon(icon, size: 14, color: Colors.white70),
             const SizedBox(width: 4),
             Text(
               label,
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: Colors.grey.shade700,
+                color: Colors.white70,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1179,28 +1175,28 @@ class _NotesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       maxLines: 2,
-      style: GoogleFonts.inter(fontSize: 13),
+      style: GoogleFonts.inter(fontSize: 13, color: Colors.white),
       decoration: InputDecoration(
         hintText: 'Notes',
         hintStyle:
-            GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade500),
+            GoogleFonts.inter(fontSize: 13, color: Colors.white24),
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: _kCardBg,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 10,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF92A3FD)),
+          borderSide: const BorderSide(color: _kLime),
         ),
       ),
     );
@@ -1220,8 +1216,8 @@ class _AddExerciseButton extends StatelessWidget {
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF92A3FD),
-          foregroundColor: Colors.white,
+          backgroundColor: _kLime,
+          foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(horizontal: 4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -1285,10 +1281,10 @@ class _ExerciseList extends StatelessWidget {
                   'Open library to add exercises',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: const Color(0xFF92A3FD),
+                    color: _kLime,
                     fontWeight: FontWeight.w600,
                     decoration: TextDecoration.underline,
-                    decorationColor: const Color(0xFF92A3FD),
+                    decorationColor: _kLime,
                   ),
                 ),
               ),
@@ -1306,6 +1302,7 @@ class _ExerciseList extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 8),
@@ -1314,18 +1311,19 @@ class _ExerciseList extends StatelessWidget {
           final ex = entry.value;
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
+            color: _kCardBg,
             child: ListTile(
               onTap: () => _showEditExerciseSheet(context, i, ex),
               leading: CircleAvatar(
                 radius: 18,
                 backgroundColor:
-                    colorScheme.primaryContainer.withValues(alpha: 0.5),
+                    _kLime.withValues(alpha: 0.15),
                 child: Text(
                   '${i + 1}',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: colorScheme.primary,
+                    color: _kLime,
                   ),
                 ),
               ),
@@ -1334,13 +1332,14 @@ class _ExerciseList extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: Colors.white,
                 ),
               ),
               subtitle: Text(
                 '${ex.sets} sets × ${ex.reps} reps · Rest ${ex.restTime}s',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: Colors.white54,
                 ),
               ),
               trailing: IconButton(
@@ -1348,7 +1347,7 @@ class _ExerciseList extends StatelessWidget {
                 icon: Icon(
                   Icons.close_rounded,
                   size: 18,
-                  color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  color: Colors.white38,
                 ),
                 tooltip: 'Remove exercise',
               ),
@@ -1429,7 +1428,7 @@ class _EditExerciseFormState extends State<_EditExerciseForm> {
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 24),
@@ -1455,7 +1454,8 @@ class _EditExerciseFormState extends State<_EditExerciseForm> {
                   );
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF92A3FD),
+                  backgroundColor: _kLime,
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
@@ -1485,7 +1485,7 @@ class _EditExerciseFormState extends State<_EditExerciseForm> {
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.black87,
+            color: Colors.white,
           ),
         ),
         Row(
@@ -1502,7 +1502,7 @@ class _EditExerciseFormState extends State<_EditExerciseForm> {
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -1606,7 +1606,7 @@ class _PlanStructureState extends State<_PlanStructure> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F8F8),
+                color: _kCardBg,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -1634,7 +1634,7 @@ class _PlanStructureState extends State<_PlanStructure> {
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Colors.white70,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1682,11 +1682,11 @@ class _PlanStructureState extends State<_PlanStructure> {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: _kCardBg,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 15,
                       spreadRadius: 1,
                       offset: const Offset(0, 4),
@@ -1729,7 +1729,7 @@ class _PlanStructureState extends State<_PlanStructure> {
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: Colors.black,
+                            color: Colors.white,
                           ),
                         ),
                         const Spacer(),
@@ -1787,7 +1787,7 @@ class _PlanStructureState extends State<_PlanStructure> {
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade600,
+                                    color: Colors.white54,
                                   ),
                                   textAlign: TextAlign.left,
                                 ),
@@ -1825,21 +1825,12 @@ class _PlanStructureState extends State<_PlanStructure> {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: isSelected
-            ? const Color(0xFF92A3FD).withValues(alpha: 0.08)
-            : Colors.white,
+            ? _kLime.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: isSelected
-            ? Border.all(color: const Color(0xFF92A3FD), width: 1.5)
-            : null,
-        boxShadow: isSelected
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+            ? Border.all(color: _kLime, width: 1.5)
+            : Border.all(color: Colors.transparent),
       ),
       child: Row(
         children: [
@@ -1868,8 +1859,8 @@ class _PlanStructureState extends State<_PlanStructure> {
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
                 color: isSelected
-                    ? const Color(0xFF92A3FD)
-                    : Colors.black87,
+                    ? _kLime
+                    : Colors.white,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -1878,7 +1869,7 @@ class _PlanStructureState extends State<_PlanStructure> {
           if (isSelected) ...[
             const SizedBox(width: 8),
             const Icon(Icons.check_circle_rounded,
-                color: Color(0xFF92A3FD), size: 20),
+                color: _kLime, size: 20),
             const SizedBox(width: 8),
           ],
         ],

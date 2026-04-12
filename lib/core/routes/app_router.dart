@@ -12,8 +12,6 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/profile_setup/profile_setup_screen.dart';
 import '../../features/auth/profile_setup/goal_selection_screen.dart';
 import '../../features/auth/profile_setup/welcome_success_screen.dart';
-import '../../features/onboarding/get_started_screen.dart';
-import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/trainee/user_coach/chat_screen.dart';
 import '../../features/chat/presentation/chat_room_screen.dart';
 import '../../features/coach/main_nav/coach_main_screen.dart';
@@ -60,8 +58,6 @@ class AppRouter {
 
   // ───────────────────────── Route Paths ─────────────────────────
 
-  static const String getStarted = '/get-started';
-  static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String register = '/register';
   static const String main = '/main';
@@ -96,16 +92,9 @@ class AppRouter {
   // ───────────────────────── Router Instance ─────────────────────────
 
   /// Creates a [GoRouter] that reacts to [AuthBloc] state changes.
-  ///
-  /// [hasSeenOnboarding] controls the initial route:
-  /// - `false` → `/get-started` (first launch)
-  /// - `true`  → `/login`
-  static GoRouter createRouter(
-    AuthBloc authBloc, {
-    bool hasSeenOnboarding = true,
-  }) {
+  static GoRouter createRouter(AuthBloc authBloc) {
     return GoRouter(
-      initialLocation: hasSeenOnboarding ? login : getStarted,
+      initialLocation: login,
       debugLogDiagnostics: true,
       routes: _routes,
       redirect: (context, state) => _guardRedirect(context, state, authBloc),
@@ -124,28 +113,27 @@ class AppRouter {
     final String loc = state.matchedLocation;
 
     final bool isOnAuthPage = loc == login || loc == register;
-    final bool isOnOnboarding = loc == getStarted || loc == onboarding;
     final bool isOnProfileSetup =
         loc == profileSetup || loc == goalSelection || loc == welcomeSuccess;
 
-    // 1. Unauthenticated users may freely view onboarding / auth pages.
+    // 1. Unauthenticated users may freely view auth pages.
     if (authState is AuthUnauthenticated) {
-      if (!isOnAuthPage && !isOnOnboarding) return login;
+      if (!isOnAuthPage) return login;
       return null;
     }
 
     // 2. Newly registered trainee → allow profile-setup pages only.
     if (authState is AuthNewlyRegistered) {
       if (isOnProfileSetup) return null;
-      if (isOnAuthPage || isOnOnboarding) return profileSetup;
+      if (isOnAuthPage) return profileSetup;
       return profileSetup;
     }
 
-    // 3. Authenticated users should never see onboarding or auth pages.
+    // 3. Authenticated users should never see auth pages.
     if (authState is AuthAuthenticated) {
       final isCoach = authState.user.role == 'coach';
 
-      if (isOnAuthPage || isOnOnboarding || isOnProfileSetup) {
+      if (isOnAuthPage || isOnProfileSetup) {
         return isCoach ? coachMain : main;
       }
       if (isCoach && loc == main) return coachMain;
@@ -159,16 +147,6 @@ class AppRouter {
   // ───────────────────────── Routes ─────────────────────────
 
   static final List<RouteBase> _routes = <RouteBase>[
-    GoRoute(
-      path: getStarted,
-      name: 'getStarted',
-      builder: (context, state) => const GetStartedScreen(),
-    ),
-    GoRoute(
-      path: onboarding,
-      name: 'onboarding',
-      builder: (context, state) => const OnboardingScreen(),
-    ),
     GoRoute(
       path: login,
       name: 'login',
@@ -349,8 +327,8 @@ class AppRouter {
       builder: (context, state) {
         final userId = FirebaseAuth.instance.currentUser!.uid;
         return BlocProvider(
-          create: (_) => ExerciseLibraryBloc(
-            workoutRepository: WorkoutRepository(),
+          create: (context) => ExerciseLibraryBloc(
+            workoutRepository: context.read<WorkoutRepository>(),
             userId: userId,
           )..add(const ExerciseLibraryLoadRequested()),
           child: const SelectExerciseScreen(),
@@ -391,8 +369,8 @@ class AppRouter {
       builder: (context, state) {
         final plan = state.extra as WorkoutPlanModel;
         return BlocProvider(
-          create: (_) => PlanDetailCubit(
-            workoutRepository: WorkoutRepository(),
+          create: (context) => PlanDetailCubit.fromContext(
+            context: context,
             initialPlan: plan,
           ),
           child: const EditPlanScreen(),

@@ -13,7 +13,7 @@ import 'core/theme/theme_cubit.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/logic/auth_bloc.dart';
 import 'features/auth/logic/auth_event.dart';
-import 'features/onboarding/onboarding_service.dart';
+import 'features/trainee/workout/data/repositories/workout_repository.dart';
 import 'features/trainee/workout/logic/active_workout_cubit.dart';
 import 'firebase_options.dart';
 
@@ -23,8 +23,7 @@ import 'firebase_options.dart';
 /// 1. Ensure Flutter bindings are ready.
 /// 2. Initialize Firebase with platform-specific options.
 /// 3. Enable Firestore offline persistence.
-/// 4. Read onboarding completion flag from SharedPreferences.
-/// 5. Launch the root widget with AuthBloc.
+/// 4. Launch the root widget with AuthBloc.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -51,9 +50,6 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  // ── Onboarding state ──
-  final bool hasSeenOnboarding = await OnboardingService.hasSeenOnboarding();
-
   final authRepository = AuthRepository();
   final authBloc = AuthBloc(authRepository: authRepository)
     ..add(const AuthCheckRequested());
@@ -61,7 +57,6 @@ void main() async {
   runApp(NutrifitApp(
     authRepository: authRepository,
     authBloc: authBloc,
-    hasSeenOnboarding: hasSeenOnboarding,
   ));
 }
 
@@ -73,13 +68,11 @@ void main() async {
 class NutrifitApp extends StatefulWidget {
   final AuthRepository authRepository;
   final AuthBloc authBloc;
-  final bool hasSeenOnboarding;
 
   const NutrifitApp({
     super.key,
     required this.authRepository,
     required this.authBloc,
-    required this.hasSeenOnboarding,
   });
 
   @override
@@ -92,10 +85,7 @@ class _NutrifitAppState extends State<NutrifitApp> {
   @override
   void initState() {
     super.initState();
-    _router = AppRouter.createRouter(
-      widget.authBloc,
-      hasSeenOnboarding: widget.hasSeenOnboarding,
-    );
+    _router = AppRouter.createRouter(widget.authBloc);
   }
 
   @override
@@ -106,15 +96,24 @@ class _NutrifitAppState extends State<NutrifitApp> {
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider.value(
-      value: widget.authRepository,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AuthRepository>.value(
+          value: widget.authRepository,
+        ),
+        RepositoryProvider<WorkoutRepository>(
+          create: (_) => WorkoutRepository(),
+        ),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider.value(
             value: widget.authBloc,
           ),
           BlocProvider(
-            create: (_) => ActiveWorkoutCubit(),
+            create: (context) => ActiveWorkoutCubit(
+              workoutRepository: context.read<WorkoutRepository>(),
+            ),
           ),
           BlocProvider(
             create: (_) => ThemeCubit(),
@@ -130,6 +129,15 @@ class _NutrifitAppState extends State<NutrifitApp> {
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: themeMode,
+
+              // Keep a dark fallback behind routed pages to avoid white flashes
+              // during rapid transitions or dropped frames.
+              builder: (context, child) {
+                return ColoredBox(
+                  color: Color(0xFF060708),
+                  child: child ?? const SizedBox.shrink(),
+                );
+              },
 
               // ── Router ──
               routerConfig: _router,

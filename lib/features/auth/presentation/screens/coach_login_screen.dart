@@ -20,9 +20,11 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  // Navy color constant for the coach portal branding
-  static const _navyColor = Color(0xFF1A2744);
-  static const _accentOrange = Color(0xFFF03613);
+  // Dark theme constants for consistency
+  static const _kScreenBg = Color(0xFF060708);
+  static const _kFieldBg = Color(0xFF1B1D22);
+  static const _kAccent = Color(0xFFD7FF1F);
+  static const _kOutline = Colors.white24;
 
   @override
   void dispose() {
@@ -52,15 +54,15 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _kScreenBg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back_rounded,
-            color: Colors.grey.shade800,
+            color: Colors.white,
           ),
         ),
       ),
@@ -92,7 +94,7 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: _accentOrange,
+                            color: Colors.white,
                             letterSpacing: 0.5,
                           ),
                           textAlign: TextAlign.center,
@@ -100,11 +102,11 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
                         const SizedBox(height: 8),
 
                         // ── Subtitle ──
-                        Text(
+                        const Text(
                           'Đăng nhập hệ thống dành riêng cho PT & Chuyên gia',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey.shade600,
+                            color: Colors.white70,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -139,7 +141,7 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
                               _obscurePassword
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
-                              color: Colors.grey.shade500,
+                              color: Colors.white54,
                               size: 20,
                             ),
                             onPressed: () => setState(
@@ -166,7 +168,7 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
                               // TODO: Implement forgot password for coaches
                             },
                             style: TextButton.styleFrom(
-                              foregroundColor: _navyColor,
+                              foregroundColor: Colors.white70,
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 4),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -189,10 +191,10 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
                           child: FilledButton(
                             onPressed: _isLoading ? null : _handleLogin,
                             style: FilledButton.styleFrom(
-                              backgroundColor: _navyColor,
-                              foregroundColor: Colors.white,
+                              backgroundColor: _kAccent,
+                              foregroundColor: Colors.black,
                               disabledBackgroundColor:
-                                  _navyColor.withValues(alpha: 0.6),
+                                  _kAccent.withAlpha(150),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -208,7 +210,7 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2.5,
-                                      color: Colors.white,
+                                      color: Colors.black,
                                     ),
                                   )
                                 : const Text('ĐĂNG NHẬP CỔNG HLV'),
@@ -231,7 +233,7 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
                                   'Trở thành Đối tác của NutriFit? ',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey.shade600,
+                                    color: Colors.white70,
                                   ),
                                 ),
                                 GestureDetector(
@@ -243,7 +245,7 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: _accentOrange,
+                                      color: _kAccent,
                                     ),
                                   ),
                                 ),
@@ -270,14 +272,14 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
         Container(
           width: 80,
           height: 80,
-          decoration: BoxDecoration(
-            color: _navyColor.withValues(alpha: 0.08),
+          decoration: const BoxDecoration(
+            color: _kFieldBg,
             shape: BoxShape.circle,
           ),
           child: const Icon(
             Icons.shield_rounded,
             size: 42,
-            color: _navyColor,
+            color: _kAccent,
           ),
         ),
         const SizedBox(height: 12),
@@ -286,7 +288,7 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w900,
-            color: _navyColor,
+            color: _kAccent,
             letterSpacing: 1.5,
           ),
         ),
@@ -308,9 +310,9 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: _kFieldBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: _kOutline),
       ),
       child: TextFormField(
         controller: controller,
@@ -322,16 +324,17 @@ class _CoachLoginScreenState extends State<CoachLoginScreen> {
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
+          color: Colors.white,
         ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(
-            color: Colors.grey.shade400,
+          hintStyle: const TextStyle(
+            color: Colors.white54,
             fontWeight: FontWeight.normal,
           ),
           prefixIcon: Icon(
             prefixIcon,
-            color: Colors.grey.shade500,
+            color: Colors.white54,
             size: 22,
           ),
           suffixIcon: suffixIcon,

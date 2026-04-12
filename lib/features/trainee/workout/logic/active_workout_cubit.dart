@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../data/models/routine_model.dart';
+import '../data/models/workout_history_model.dart';
+import '../data/repositories/workout_repository.dart';
 
 /// State for the active workout session.
 class ActiveWorkoutState {
@@ -58,6 +60,15 @@ class ActiveWorkoutState {
   /// Saved exercise elapsed when minimized.
   final int minimizedExerciseElapsed;
 
+  /// Cached GIF URLs keyed by exercise name.
+  final Map<String, String> exerciseGifs;
+
+  /// Whether GIF metadata is currently loading.
+  final bool isLoadingExerciseGifs;
+
+  /// Whether workout history is currently being saved.
+  final bool isSavingWorkoutHistory;
+
   const ActiveWorkoutState({
     this.routine,
     this.planId,
@@ -75,6 +86,9 @@ class ActiveWorkoutState {
     this.minimizedRestRemaining = 0,
     this.minimizedPrepareSeconds = 10,
     this.minimizedExerciseElapsed = 0,
+    this.exerciseGifs = const {},
+    this.isLoadingExerciseGifs = false,
+    this.isSavingWorkoutHistory = false,
   });
 
   ActiveWorkoutState copyWith({
@@ -94,6 +108,9 @@ class ActiveWorkoutState {
     int? minimizedRestRemaining,
     int? minimizedPrepareSeconds,
     int? minimizedExerciseElapsed,
+    Map<String, String>? exerciseGifs,
+    bool? isLoadingExerciseGifs,
+    bool? isSavingWorkoutHistory,
   }) {
     return ActiveWorkoutState(
       routine: routine ?? this.routine,
@@ -113,6 +130,9 @@ class ActiveWorkoutState {
       minimizedRestRemaining: minimizedRestRemaining ?? this.minimizedRestRemaining,
       minimizedPrepareSeconds: minimizedPrepareSeconds ?? this.minimizedPrepareSeconds,
       minimizedExerciseElapsed: minimizedExerciseElapsed ?? this.minimizedExerciseElapsed,
+      exerciseGifs: exerciseGifs ?? this.exerciseGifs,
+      isLoadingExerciseGifs: isLoadingExerciseGifs ?? this.isLoadingExerciseGifs,
+      isSavingWorkoutHistory: isSavingWorkoutHistory ?? this.isSavingWorkoutHistory,
     );
   }
 }
@@ -147,11 +167,14 @@ class SetData {
 /// Lives at the app level (provided in main.dart) so that
 /// workout state persists when navigating away from the screen.
 class ActiveWorkoutCubit extends Cubit<ActiveWorkoutState> {
+  final WorkoutRepository _repo;
   Timer? _restTimer;
   Timer? _workoutTimer;
   DateTime? _pausedTime;
 
-  ActiveWorkoutCubit() : super(const ActiveWorkoutState());
+  ActiveWorkoutCubit({required WorkoutRepository workoutRepository})
+    : _repo = workoutRepository,
+      super(const ActiveWorkoutState());
 
   // ─────────────────── Session Lifecycle ───────────────────
 
@@ -165,7 +188,11 @@ class ActiveWorkoutCubit extends Cubit<ActiveWorkoutState> {
     _workoutTimer?.cancel();
     _pausedTime = null;
 
-    emit(ActiveWorkoutState(routine: routine, planId: planId));
+    emit(ActiveWorkoutState(
+      routine: routine,
+      planId: planId,
+      exerciseGifs: state.exerciseGifs,
+    ));
     _initSetsData();
   }
 
@@ -201,6 +228,64 @@ class ActiveWorkoutCubit extends Cubit<ActiveWorkoutState> {
     }
     if (state.isWorkoutActive) {
       _startWorkoutTimer();
+    }
+  }
+
+  /// Loads GIF URLs for given exercise names and caches them in state.
+  Future<void> loadExerciseGifs(Iterable<String> exerciseNames) async {
+    final normalized = exerciseNames
+        .map((name) => name.trim())
+        .where((name) => name.isNotEmpty)
+        .toSet();
+
+    if (normalized.isEmpty) {
+      return;
+    }
+
+    final nextMap = Map<String, String>.from(state.exerciseGifs);
+    normalized.removeWhere(nextMap.containsKey);
+
+    if (normalized.isEmpty) {
+      return;
+    }
+
+    emit(state.copyWith(isLoadingExerciseGifs: true));
+
+    try {
+      for (final name in normalized) {
+        final gifUrl = await _repo.getExerciseGifByName(name);
+        if (gifUrl != null && gifUrl.isNotEmpty) {
+          nextMap[name] = gifUrl;
+        }
+      }
+
+      emit(
+        state.copyWith(
+          exerciseGifs: nextMap,
+          isLoadingExerciseGifs: false,
+        ),
+      );
+    } catch (_) {
+      emit(state.copyWith(isLoadingExerciseGifs: false));
+    }
+  }
+
+  /// Persists workout history to repository.
+  Future<void> saveWorkoutHistory(WorkoutHistoryModel history) async {
+    emit(state.copyWith(isSavingWorkoutHistory: true));
+    try {
+      await _repo.saveWorkoutHistory(history);
+    } finally {
+      emit(state.copyWith(isSavingWorkoutHistory: false));
+    }
+  }
+
+  /// Marks current day workout status as completed.
+  Future<void> markWorkoutCompleted() async {
+    try {
+      await _repo.markWorkoutCompleted();
+    } catch (_) {
+      // Ignore write failures because Firestore offline sync may recover later.
     }
   }
 

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// Emits a new [ThemeMode] whenever the trainee selects a different option
 /// (light, dark, or system default).
 class ThemeCubit extends Cubit<ThemeMode> {
-  ThemeCubit() : super(ThemeMode.system);
+  ThemeCubit() : super(ThemeMode.dark);
 
   /// Switch to the given [mode].
   void setTheme(ThemeMode mode) => emit(mode);

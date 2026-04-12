@@ -18,7 +18,6 @@ class WorkoutRecordScreen extends StatelessWidget {
       history: history,
       showSaveButton: false,
       showBackButton: true,
-      topRightIcon: Icons.more_vert_rounded,
     );
   }
 }

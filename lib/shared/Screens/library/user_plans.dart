@@ -341,8 +341,8 @@ class _WorkoutTemplateListScreenState extends State<WorkoutTemplateListScreen> {
                       }
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: const Color(0xFFD7FF1F),
+                      foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -355,7 +355,7 @@ class _WorkoutTemplateListScreenState extends State<WorkoutTemplateListScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ),

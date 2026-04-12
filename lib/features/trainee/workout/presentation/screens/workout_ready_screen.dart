@@ -54,22 +54,13 @@ class _WorkoutReadyScreenState extends State<WorkoutReadyScreen>
   void initState() {
     super.initState();
 
-    // Circular progress animation for the "Ready" phase (2 seconds).
     _circleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 800), 
     );
-    _circleProgress = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _circleController, curve: Curves.easeInOut),
-    );
+    _circleProgress = _circleController; 
 
-    // Start the Ready animation immediately.
-    _circleController.forward();
-    _circleController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _startCountdown();
-      }
-    });
+    _startCountdown();
   }
 
   void _startCountdown() {
@@ -78,10 +69,7 @@ class _WorkoutReadyScreenState extends State<WorkoutReadyScreen>
       _countdownValue = 3;
     });
 
-    // Reset and reuse the circle controller for each countdown tick (1 second).
-    _circleController.duration = const Duration(milliseconds: 1000);
-    _circleController.reset();
-    _circleController.forward();
+    _circleController.animateTo(0.33, curve: Curves.fastOutSlowIn);
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdownValue <= 1) {
@@ -94,21 +82,19 @@ class _WorkoutReadyScreenState extends State<WorkoutReadyScreen>
         _countdownValue--;
       });
 
-      // Restart circle animation for next tick.
-      _circleController.reset();
-      _circleController.forward();
+      final target = (4 - _countdownValue) / 3.0;
+      _circleController.animateTo(target.clamp(0.0, 1.0), curve: Curves.fastOutSlowIn);
     });
   }
 
   void _onCountdownFinished() {
+    _circleController.value = 1.0;
     setState(() => _phase = _Phase.done);
 
-    // Load the routine into global cubit and navigate.
     final cubit = context.read<ActiveWorkoutCubit>();
     cubit.loadRoutine(widget.routine, planId: widget.planId);
 
-    // Small delay so the user sees "GO" briefly.
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 600), () {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -132,33 +118,18 @@ class _WorkoutReadyScreenState extends State<WorkoutReadyScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Close / skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 12, right: 16),
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Text(
-                    'Skip',
-                    style: GoogleFonts.inter(
-                      color: Colors.white54,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            const Spacer(),
             // Center content
             Expanded(
+              flex: 2,
               child: Center(
                 child: _buildCenterContent(),
               ),
             ),
+            const Spacer(),
             // Health disclaimer
             Padding(
-              padding: const EdgeInsets.fromLTRB(40, 0, 40, 24),
+              padding: const EdgeInsets.fromLTRB(40, 0, 40, 48),
               child: Column(
                 children: [
                   Icon(
@@ -188,41 +159,39 @@ class _WorkoutReadyScreenState extends State<WorkoutReadyScreen>
   }
 
   Widget _buildCenterContent() {
-    switch (_phase) {
-      case _Phase.ready:
-        return _AnimatedCircle(
-          progress: _circleProgress,
-          child: Text(
-            'Ready',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 38,
-              fontWeight: FontWeight.w700,
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return ScaleTransition(
+          scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          ),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      child: _phase == _Phase.done
+          ? Text(
+              'GO!',
+              key: const ValueKey('go'),
+              style: GoogleFonts.inter(
+                color: _kLime,
+                fontSize: 84,
+                fontWeight: FontWeight.w900,
+              ),
+            )
+          : _AnimatedCircle(
+              key: ValueKey(_countdownValue),
+              progress: _circleProgress,
+              child: Text(
+                '$_countdownValue',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 84,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
-          ),
-        );
-      case _Phase.countdown:
-        return _AnimatedCircle(
-          progress: _circleProgress,
-          child: Text(
-            '$_countdownValue',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 72,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        );
-      case _Phase.done:
-        return Text(
-          'GO!',
-          style: GoogleFonts.inter(
-            color: _kLime,
-            fontSize: 72,
-            fontWeight: FontWeight.w900,
-          ),
-        );
-    }
+    );
   }
 }
 
@@ -232,6 +201,7 @@ class _WorkoutReadyScreenState extends State<WorkoutReadyScreen>
 
 class _AnimatedCircle extends StatelessWidget {
   const _AnimatedCircle({
+    super.key,
     required this.progress,
     required this.child,
   });

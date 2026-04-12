@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:gif_view/gif_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../features/trainee/workout/data/models/exercise_model.dart';
@@ -13,7 +14,6 @@ import 'exercise_favorite_store.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const Color _kBg = Color(0xFF060708);
-const Color _kBackBtnBg = Color(0xFFF7F8F8);
 const Color _kPurple = Color(0xFF7B61FF);
 const Color _kPurpleLight = Color(0xFFEDE8FF);
 const Color _kWarningRed = Color(0xFFFF0000);
@@ -40,6 +40,20 @@ class ExerciseDetailScreen extends StatefulWidget {
 
 class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   bool _isDescriptionExpanded = false;
+
+  String get _previewImageUrl {
+    if (widget.exercise.gifUrl.trim().isNotEmpty) {
+      return widget.exercise.gifUrl.trim();
+    }
+    if (widget.exercise.imageUrl.isNotEmpty) {
+      return widget.exercise.imageUrl;
+    }
+    return '';
+  }
+
+  String get _playableGifUrl {
+    return widget.exercise.gifUrl.trim();
+  }
 
   /// Parse instructions text into step list.
   /// Each line becomes a step. If instructions is empty, return empty list.
@@ -178,30 +192,118 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildVideoBlock() {
-    // If exercise has an imageUrl, display it; otherwise show gradient placeholder
-    if (widget.exercise.imageUrl.isNotEmpty) {
-      return Container(
-        height: 220,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: Colors.grey.shade200,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Image.asset(
-          widget.exercise.imageUrl,
-          width: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) =>
-              _buildGradientPlaceholder(),
-        ),
+    final previewUrl = _previewImageUrl;
+    final hasPlayableGif = _playableGifUrl.isNotEmpty;
+
+    return SizedBox(
+      height: 220,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (previewUrl.isEmpty)
+            _buildGradientPlaceholder()
+          else
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                color: Colors.grey.shade200,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: hasPlayableGif
+                  ? _StaticDetailGifPreview(url: _playableGifUrl)
+                  : previewUrl.startsWith('http')
+                      ? Image.network(
+                          previewUrl,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildGradientPlaceholder(),
+                        )
+                      : Image.asset(
+                          previewUrl,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildGradientPlaceholder(),
+                        ),
+            ),
+          Center(
+            child: GestureDetector(
+              onTap: () => _onPlayPressed(hasPlayableGif),
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _kPurple.withAlpha(50),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.play_arrow_rounded,
+                  color: hasPlayableGif ? _kPurple : Colors.grey,
+                  size: 36,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onPlayPressed(bool hasPlayableGif) {
+    if (!hasPlayableGif) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bai tap nay chua co GIF minh hoa')),
       );
+      return;
     }
-    return _buildGradientPlaceholder();
+
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withAlpha(230),
+      builder: (_) {
+        return Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: InteractiveViewer(
+                    minScale: 1,
+                    maxScale: 3,
+                    child: Center(
+                      child: Image.network(
+                        _playableGifUrl,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildGradientPlaceholder() {
     return Container(
-      height: 220,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
@@ -238,30 +340,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withAlpha(15),
-              ),
-            ),
-          ),
-
-          // Play button in center
-          Center(
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: _kPurple.withAlpha(50),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                color: _kPurple,
-                size: 34,
               ),
             ),
           ),
@@ -536,6 +614,55 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StaticDetailGifPreview extends StatefulWidget {
+  const _StaticDetailGifPreview({required this.url});
+
+  final String url;
+
+  @override
+  State<_StaticDetailGifPreview> createState() => _StaticDetailGifPreviewState();
+}
+
+class _StaticDetailGifPreviewState extends State<_StaticDetailGifPreview> {
+  late final GifController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = GifController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GifView.network(
+      widget.url,
+      controller: _controller,
+      autoPlay: false,
+      loop: false,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.low,
+      onLoaded: (_) {
+        _controller.seek(0);
+        _controller.pause();
+      },
+      progressBuilder: (_) => const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+      errorBuilder: (context, error, tryAgain) => const SizedBox.shrink(),
     );
   }
 }

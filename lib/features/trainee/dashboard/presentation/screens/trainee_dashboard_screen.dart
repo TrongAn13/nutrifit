@@ -78,7 +78,12 @@ class _TraineeDashboardScreenState extends State<TraineeDashboardScreen>
                 _SectionHeader(
                   title: 'My Schedule',
                   actionLabel: 'Show All',
-                  onTap: () => context.push(AppRouter.traineeSchedule),
+                  onTap: () async {
+                    await context.push(AppRouter.traineeSchedule);
+                    if (!context.mounted) return;
+                    _activePlanCubit.loadActivePlan();
+                    setState(() {});
+                  },
                 ),
                 const SizedBox(height: 12),
                 const _ScheduleCard(),
@@ -112,6 +117,10 @@ String _getGreeting() {
   if (hour < 12) return 'Good Morning!';
   if (hour < 18) return 'Good Afternoon!';
   return 'Good Evening!';
+}
+
+bool _isSameDay(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
 class _DashboardHeader extends StatelessWidget {
@@ -335,172 +344,211 @@ class _TodayWorkoutCard extends StatelessWidget {
         final routineName = todayRoutine?.name ?? (isRestDay ? 'REST DAY' : 'No workout');
         final exerciseCount = todayRoutine?.exercises.length ?? 0;
 
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: TraineeDashboardScreen._limeColor.withValues(alpha: 0.16),
-                blurRadius: 80,
-                spreadRadius: 8,
-                offset: const Offset(0, 20),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              height: 420,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Background image: plan image or fallback
-                  _buildBackground(plan),
+        return FutureBuilder<List<WorkoutHistoryModel>>(
+          future: WorkoutRepository().getWorkoutHistories(),
+          builder: (context, historySnapshot) {
+            final histories = historySnapshot.data ?? const <WorkoutHistoryModel>[];
+            final now = DateTime.now();
 
-                  // Dark gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.58),
-                          Colors.black.withValues(alpha: 0.72),
-                          Colors.black.withValues(alpha: 0.86),
-                        ],
-                      ),
-                    ),
-                  ),
+            final isCompletedToday = histories.any((h) {
+              if (!_isSameDay(h.date, now) || h.completionPercentage <= 0) {
+                return false;
+              }
 
-                  // FOR TODAY badge
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.9),
-                        borderRadius: const BorderRadius.only(
-                          bottomRight: Radius.circular(18),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isRestDay ? Icons.hotel_rounded : Icons.adjust_rounded,
-                            size: 18,
-                            color: TraineeDashboardScreen._limeColor,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'FOR TODAY',
-                            style: GoogleFonts.inter(
-                              color: TraineeDashboardScreen._limeColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+              if (plan != null && (h.planId?.trim().isNotEmpty ?? false)) {
+                return h.planId == plan.planId;
+              }
 
-                  // Bottom section
-                  Positioned(
-                    left: 22,
-                    right: 22,
-                    bottom: 24,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          planName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 19,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          routineName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            color: isRestDay
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : const Color(0xFFE7A627),
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (exerciseCount > 0) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '$exerciseCount exercises',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          onPressed: plan == null || isRestDay || todayRoutine == null
-                              ? null
-                              : () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => WorkoutReadyScreen(
-                                        routine: todayRoutine!,
-                                        planId: plan!.planId,
-                                      ),
-                                    ),
-                                  );
-                                },
-                          icon: Icon(
-                            isRestDay
-                                ? Icons.self_improvement_rounded
-                                : Icons.play_arrow_rounded,
-                            color: Colors.black,
-                            size: 24,
-                          ),
-                          label: Text(
-                            isRestDay ? 'Rest and Recover' : 'Start Workout',
-                            style: GoogleFonts.inter(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            backgroundColor: isRestDay
-                                ? Colors.white.withValues(alpha: 0.5)
-                                : TraineeDashboardScreen._limeColor,
-                            disabledBackgroundColor:
-                                Colors.white.withValues(alpha: 0.3),
-                            disabledForegroundColor: Colors.black54,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+              if (todayRoutine != null) {
+                return h.routineName.trim().toLowerCase() ==
+                    todayRoutine.name.trim().toLowerCase();
+              }
+
+              return true;
+            });
+
+            final canStartWorkout =
+                plan != null && !isRestDay && todayRoutine != null && !isCompletedToday;
+
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: TraineeDashboardScreen._limeColor.withValues(alpha: 0.16),
+                    blurRadius: 80,
+                    spreadRadius: 8,
+                    offset: const Offset(0, 20),
                   ),
                 ],
               ),
-            ),
-          ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  height: 420,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Background image: plan image or fallback
+                      _buildBackground(plan),
+
+                      // Dark gradient overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.58),
+                              Colors.black.withValues(alpha: 0.72),
+                              Colors.black.withValues(alpha: 0.86),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // FOR TODAY badge
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.9),
+                            borderRadius: const BorderRadius.only(
+                              bottomRight: Radius.circular(18),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isCompletedToday
+                                    ? Icons.check_circle_rounded
+                                    : (isRestDay
+                                          ? Icons.hotel_rounded
+                                          : Icons.adjust_rounded),
+                                size: 18,
+                                color: TraineeDashboardScreen._limeColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isCompletedToday ? 'COMPLETED' : 'FOR TODAY',
+                                style: GoogleFonts.inter(
+                                  color: TraineeDashboardScreen._limeColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Bottom section
+                      Positioned(
+                        left: 22,
+                        right: 22,
+                        bottom: 24,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              planName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 19,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              routineName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: isRestDay
+                                    ? Colors.white.withValues(alpha: 0.6)
+                                    : const Color(0xFFE7A627),
+                                fontSize: 22,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (exerciseCount > 0) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '$exerciseCount exercises',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: canStartWorkout
+                                  ? () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => WorkoutReadyScreen(
+                                            routine: todayRoutine!,
+                                            planId: plan!.planId,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  : null,
+                              icon: Icon(
+                                isCompletedToday
+                                    ? Icons.check_rounded
+                                    : (isRestDay
+                                          ? Icons.self_improvement_rounded
+                                          : Icons.play_arrow_rounded),
+                                color: Colors.black,
+                                size: 24,
+                              ),
+                              label: Text(
+                                isCompletedToday
+                                    ? 'Completed Today'
+                                    : (isRestDay ? 'Rest and Recover' : 'Start Workout'),
+                                style: GoogleFonts.inter(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                backgroundColor: isCompletedToday
+                                    ? TraineeDashboardScreen._limeColor.withValues(alpha: 0.75)
+                                    : (isRestDay
+                                          ? Colors.white.withValues(alpha: 0.5)
+                                          : TraineeDashboardScreen._limeColor),
+                                disabledBackgroundColor: isCompletedToday
+                                    ? TraineeDashboardScreen._limeColor.withValues(alpha: 0.75)
+                                    : Colors.white.withValues(alpha: 0.3),
+                                disabledForegroundColor: Colors.black87,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -592,13 +640,11 @@ class _ScheduleCard extends StatefulWidget {
 
 class _ScheduleCardState extends State<_ScheduleCard> {
   late final WorkoutRepository _repo;
-  late Future<List<WorkoutHistoryModel>> _historiesFuture;
 
   @override
   void initState() {
     super.initState();
     _repo = WorkoutRepository();
-    _historiesFuture = _repo.getWorkoutHistories();
   }
 
   @override
@@ -608,7 +654,7 @@ class _ScheduleCardState extends State<_ScheduleCard> {
         final plan = state.plan;
 
         return FutureBuilder<List<WorkoutHistoryModel>>(
-          future: _historiesFuture,
+          future: _repo.getWorkoutHistories(),
           builder: (context, snapshot) {
             final histories = snapshot.data ?? [];
 
@@ -769,19 +815,22 @@ class _DynamicCalendarGrid extends StatelessWidget {
                 children: List.generate(7, (colIndex) {
                   final dayIndex = rowIndex * 7 + colIndex;
                   final date = days[dayIndex];
+                  final activePlanId = plan?.planId;
 
                   final history = histories.where((h) =>
                     h.date.year == date.year &&
                     h.date.month == date.month &&
                     h.date.day == date.day &&
-                    h.completionPercentage >= 0.0
+                    h.completionPercentage >= 0.0 &&
+                    (activePlanId == null || h.planId == activePlanId)
                   ).firstOrNull;
 
                   final skipHistory = histories.where((h) =>
                     h.date.year == date.year &&
                     h.date.month == date.month &&
                     h.date.day == date.day &&
-                    h.completionPercentage == -1.0
+                    h.completionPercentage == -1.0 &&
+                    (activePlanId == null || h.planId == activePlanId)
                   ).firstOrNull;
 
                   final isCompleted = history != null;
@@ -952,7 +1001,10 @@ class _DynamicConsistency extends StatelessWidget {
       }
     }
 
-    final consistency = scheduledCount > 0 ? completedInRange / scheduledCount : 0.0;
+    final completedCapped = scheduledCount > 0
+      ? completedInRange.clamp(0, scheduledCount)
+      : 0;
+    final consistency = scheduledCount > 0 ? completedCapped / scheduledCount : 0.0;
     final consistencyPercent = (consistency * 100).round();
 
     // Active days = days since plan was activated
@@ -998,17 +1050,48 @@ class _DynamicConsistency extends StatelessWidget {
                 Positioned(
                   right: -4,
                   top: -2,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
-                    ),
-                    child: Icon(
-                      Icons.info_outline_rounded,
-                      color: Colors.white.withValues(alpha: 0.6),
-                      size: 8,
+                  child: GestureDetector(
+                    onTap: () {
+                      showDialog<void>(
+                        context: context,
+                        builder: (dialogContext) {
+                          return AlertDialog(
+                            backgroundColor: TraineeDashboardScreen._cardColor,
+                            content: Text(
+                              'This is calculated based on the number of workouts you have completed in the 4-week period.',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 13,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(),
+                                child: Text(
+                                  'OK',
+                                  style: GoogleFonts.inter(
+                                    color: TraineeDashboardScreen._limeColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
+                      ),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        color: Colors.white.withValues(alpha: 0.6),
+                        size: 8,
+                      ),
                     ),
                   ),
                 ),
@@ -1294,13 +1377,6 @@ class _SchedulePlanTile extends StatelessWidget {
 class _FollowingPlansCard extends StatelessWidget {
   const _FollowingPlansCard();
 
-  int _countCompletedSessions(WorkoutPlanModel plan, List<WorkoutHistoryModel> histories) {
-    final matched = histories.where((h) => h.planId == plan.planId).length;
-    final total = plan.totalWeeks * plan.sessionsPerWeek;
-    if (total <= 0) return 0;
-    return matched > total ? total : matched;
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ActivePlanCubit, ActivePlanState>(
@@ -1327,10 +1403,19 @@ class _FollowingPlansCard extends StatelessWidget {
         return FutureBuilder<List<WorkoutHistoryModel>>(
           future: WorkoutRepository().getWorkoutHistories(),
           builder: (context, snapshot) {
-            final histories = snapshot.data ?? const <WorkoutHistoryModel>[];
-            final totalSessions = plan.totalWeeks * plan.sessionsPerWeek;
-            final completedSessions = _countCompletedSessions(plan, histories);
-            final progress = totalSessions > 0 ? (completedSessions / totalSessions).clamp(0.0, 1.0) : 0.0;
+            final now = DateTime.now();
+            final startDate = DateTime(
+              plan.createdAt.year,
+              plan.createdAt.month,
+              plan.createdAt.day,
+            );
+            final totalPlanDays = plan.totalWeeks * 7;
+            final elapsedDays = totalPlanDays <= 0
+                ? 0
+                : (now.difference(startDate).inDays + 1).clamp(0, totalPlanDays);
+            final progress = totalPlanDays > 0
+                ? (elapsedDays / totalPlanDays).clamp(0.0, 1.0)
+                : 0.0;
             final progressPercent = (progress * 100).round();
 
             return GestureDetector(

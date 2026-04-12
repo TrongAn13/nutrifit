@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../features/trainee/workout/data/models/exercise_model.dart';
 import '../../../features/trainee/workout/data/models/routine_model.dart';
 import '../../../features/trainee/workout/data/models/workout_plan_model.dart';
+import '../../widgets/static_gif_thumbnail.dart';
 import '../library/exercise_detail_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -33,6 +34,54 @@ class SystemPlanningExercisesScreen extends StatefulWidget {
 class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesScreen> {
   bool _initializedScroll = false;
   late final ScrollController _scrollController;
+  final Map<String, ExerciseModel> _exerciseInfos = {};
+  bool _isLoadingInfos = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchExercisesInfo();
+  }
+
+  Future<void> _fetchExercisesInfo() async {
+    try {
+      final names = widget.routine.exercises.map((e) => e.exerciseName).toList();
+      if (names.isEmpty) {
+        if (mounted) setState(() => _isLoadingInfos = false);
+        return;
+      }
+      
+      // Since Firestore 'in' query has a limit of 10, we could batch it or just fetch one by one
+      // Fetching one by one to avoid 10-limit issues for long routines
+      for (final name in names) {
+        if (_exerciseInfos.containsKey(name)) continue;
+        
+        final snapshot = await FirebaseFirestore.instance
+            .collection('exercises')
+            .where('name', isEqualTo: name)
+            .limit(1)
+            .get();
+            
+        if (snapshot.docs.isNotEmpty) {
+          final data = snapshot.docs.first.data();
+          data['exerciseId'] = snapshot.docs.first.id;
+          if (mounted) {
+            setState(() {
+              _exerciseInfos[name] = ExerciseModel.fromJson(data);
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching exercise info: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingInfos = false;
+        });
+      }
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -53,44 +102,128 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final heroHeight = (screenHeight * 0.65).clamp(450.0, 600.0);
+
     return Scaffold(
       backgroundColor: _kBg,
-      body: CustomScrollView(
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  _buildHeader(),
-                  const SizedBox(height: 16),
-                  _buildExercises(),
-                  const SizedBox(height: 16),
-                  _buildEquipments(),
-                  const SizedBox(height: 48),
-                ],
+      body: Stack(
+        children: [
+          // Parallax hero image layer (behind everything)
+          _buildHeroImageBackground(heroHeight),
+          // Scrollable content layer
+          CustomScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              _buildSliverAppBar(heroHeight),
+              // Gradient transition from hero image to content
+              SliverToBoxAdapter(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withAlpha(10),
+                        Colors.black.withAlpha(40),
+                        Colors.black.withAlpha(100),
+                        _kBg.withAlpha(180),
+                        _kBg,
+                      ],
+                      stops: const [0.0, 0.3, 0.7, 0.9, 1.0],
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      _buildHeader(),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              // Main content on solid background
+              SliverToBoxAdapter(
+                child: Container(
+                  color: _kBg,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildExercises(),
+                      const SizedBox(height: 16),
+                      _buildEquipments(),
+                      const SizedBox(height: 48),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSliverAppBar() {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final heroHeight = (screenHeight * 0.65).clamp(450.0, 600.0);
+  // Parallax hero image positioned behind the CustomScrollView
+  Widget _buildHeroImageBackground(double heroHeight) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: heroHeight + 150,
+      child: AnimatedBuilder(
+        animation: _scrollController,
+        builder: (context, child) {
+          double scale = 1.0;
+          double translateY = 0.0;
+          if (_scrollController.hasClients) {
+            final offset = _scrollController.offset;
+            if (offset < 0) {
+              scale = 1.0 + (-offset / heroHeight);
+            } else {
+              translateY = -offset * 0.4;
+            }
+          }
+          return Transform(
+            alignment: Alignment.topCenter,
+            transform: Matrix4.identity()
+              ..translate(0.0, translateY)
+              ..scale(scale, scale),
+            child: child,
+          );
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildHeroImageContent(heroHeight + 150),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.black.withAlpha(80), Colors.transparent, Colors.transparent, _kBg.withAlpha(120)],
+                    stops: const [0.0, 0.4, 0.8, 1.0],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildSliverAppBar(double heroHeight) {
     return SliverAppBar(
       pinned: true,
       stretch: true,
       expandedHeight: heroHeight,
-      backgroundColor: _kBg,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: Padding(
@@ -116,17 +249,12 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
         animation: _scrollController,
         builder: (context, child) {
           if (!_scrollController.hasClients) return const SizedBox.shrink();
-          
           final offset = _scrollController.offset;
           final collapsedHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
-          
-          final fullyHiddenOffset = heroHeight - collapsedHeight + 90; 
-          final startFadeOffset = fullyHiddenOffset - 40; 
-
+          final fullyHiddenOffset = heroHeight - collapsedHeight + 120;
+          final startFadeOffset = fullyHiddenOffset - 40;
           final opacity = ((offset - startFadeOffset) / (fullyHiddenOffset - startFadeOffset)).clamp(0.0, 1.0);
-
           if (opacity == 0.0) return const SizedBox.shrink();
-
           return Opacity(
             opacity: opacity,
             child: child,
@@ -144,31 +272,24 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
           overflow: TextOverflow.ellipsis,
         ),
       ),
+      // Fade-in dark overlay when collapsed (same as user_plan_detail_screen)
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.none,
         stretchModes: const [StretchMode.zoomBackground],
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            _buildHeroImageContent(heroHeight),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withAlpha(60),
-                      Colors.transparent,
-                      _kBg.withAlpha(150),
-                      _kBg,
-                    ],
-                    stops: const [0.0, 0.4, 0.8, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ],
+        background: AnimatedBuilder(
+          animation: _scrollController,
+          builder: (context, child) {
+            double opacity = 0.0;
+            if (_scrollController.hasClients) {
+              final offset = _scrollController.offset;
+              final collapsedHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
+              final threshold = heroHeight - collapsedHeight;
+              if (offset > threshold - 20) {
+                opacity = ((offset - (threshold - 20)) / 20).clamp(0.0, 1.0);
+              }
+            }
+            return Container(color: _kBg.withOpacity(opacity * 0.5));
+          },
         ),
       ),
     );
@@ -292,6 +413,8 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
   }
 
   Widget _buildExerciseCard(BuildContext context, ExerciseEntry ex) {
+    final info = _exerciseInfos[ex.exerciseName];
+    
     return GestureDetector(
       onTap: () => _navigateToExerciseDetail(context, ex),
       child: Container(
@@ -302,7 +425,7 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
         ),
         child: Row(
           children: [
-            // Thumbnail placeholder
+            // Thumbnail
             Container(
               width: 56,
               height: 56,
@@ -310,13 +433,32 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
                 color: Colors.black26,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.fitness_center_rounded,
-                  color: _kAccent,
-                  size: 24,
-                ),
-              ),
+              clipBehavior: Clip.antiAlias,
+              child: info != null && info.gifUrl.isNotEmpty
+                  ? StaticGifThumbnail(url: info.gifUrl, size: 56)
+                  : info != null && info.imageUrl.isNotEmpty
+                      ? (info.imageUrl.startsWith('assets/')
+                          ? Image.asset(
+                              info.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.fitness_center_rounded, color: _kAccent, size: 24),
+                              ),
+                            )
+                          : Image.network(
+                              info.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.fitness_center_rounded, color: _kAccent, size: 24),
+                              ),
+                            ))
+                      : const Center(
+                          child: Icon(
+                            Icons.fitness_center_rounded,
+                            color: _kAccent,
+                            size: 24,
+                          ),
+                        ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -426,16 +568,28 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
   }
 
   Widget _buildEquipments() {
-    // For now, list mock equipments to simulate UI since ExerciseEntry doesn't have an itemized equipment field.
-    final mockEquipments = [
-      _EquipmentData(name: 'Barbell', icon: Icons.fitness_center_rounded),
-      _EquipmentData(name: 'Dumbbell', icon: Icons.fitness_center),
-      _EquipmentData(name: 'Cable Machine', icon: Icons.cable_rounded),
-    ];
-
     if (widget.routine.exercises.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    final Set<String> equipmentNames = {};
+    for (final info in _exerciseInfos.values) {
+      if (info.equipment.isNotEmpty) {
+        final parts = info.equipment.split(RegExp(r',|/')).map((e) => e.trim()).where((e) => e.isNotEmpty);
+        equipmentNames.addAll(parts);
+      }
+    }
+
+    if (equipmentNames.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final equipments = equipmentNames.map((name) {
+      IconData icon = Icons.fitness_center;
+      if (name.toLowerCase().contains('cable')) icon = Icons.cable_rounded;
+      if (name.toLowerCase().contains('dumb')) icon = Icons.fitness_center;
+      return _EquipmentData(name: name, icon: icon);
+    }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,7 +598,7 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Equipments',
+              'Equipment',
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -452,7 +606,7 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
               ),
             ),
             Text(
-              '${mockEquipments.length} selected',
+              '${equipments.length} selected',
               style: GoogleFonts.inter(
                 fontSize: 13,
                 color: _kTextGrey,
@@ -465,10 +619,10 @@ class _SystemPlanningExercisesScreenState extends State<SystemPlanningExercisesS
           padding: EdgeInsets.zero,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: mockEquipments.length,
+          itemCount: equipments.length,
           separatorBuilder: (context, index) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
-            final eq = mockEquipments[index];
+            final eq = equipments[index];
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(

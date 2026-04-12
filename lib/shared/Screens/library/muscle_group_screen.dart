@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:gif_view/gif_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../features/trainee/workout/data/models/exercise_model.dart';
+import '../../widgets/static_gif_thumbnail.dart';
 import 'exercise_detail_screen.dart';
 import 'exercise_favorite_store.dart';
 
@@ -60,28 +64,67 @@ class _MuscleGroupScreenState extends State<MuscleGroupScreen> {
   }
 
   Future<List<ExerciseModel>> _fetchExercises() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('exercises').get();
+    final exercisesCol = FirebaseFirestore.instance.collection('exercises');
 
-    final all = snapshot.docs.map((d) {
-      final data = d.data();
-      data['exerciseId'] = d.id;
-      return ExerciseModel.fromJson(data);
-    }).toList();
+    List<ExerciseModel> mapDocs(QuerySnapshot<Map<String, dynamic>> snapshot) {
+      return snapshot.docs.map((d) {
+        final data = d.data();
+        data['exerciseId'] = d.id;
+        return ExerciseModel.fromJson(data);
+      }).toList();
+    }
+
+    Future<void> warmUpGifCache(List<ExerciseModel> items) async {
+      final urls = items
+          .map((e) => e.gifUrl.trim())
+          .where((u) => u.startsWith('http'))
+          .toSet()
+          .take(8)
+          .toList();
+
+      for (final url in urls) {
+        // Prime GIF cache for initial visible cards only.
+        unawaited(GifView.preFetchImage(NetworkImage(url)));
+      }
+    }
 
     if (widget.showAllExercises) {
-      _allExercises = all;
+      final snapshot = await exercisesCol.get();
+      _allExercises = mapDocs(snapshot);
+      unawaited(warmUpGifCache(_allExercises));
       return _allExercises;
     }
 
-    final gnLow = widget.groupName.toLowerCase();
-    _allExercises = all.where((e) {
-      if (e.category.isNotEmpty && e.category.toLowerCase() == gnLow) {
-        return true;
+    // Fast path: try targeted server-side queries first.
+    final queryResults = await Future.wait([
+      exercisesCol.where('category', isEqualTo: widget.groupName).get(),
+      exercisesCol.where('primaryMuscle', isEqualTo: widget.groupName).get(),
+      exercisesCol.where('bodyPart', isEqualTo: widget.groupName).get(),
+    ]);
+
+    final byId = <String, ExerciseModel>{};
+    for (final snapshot in queryResults) {
+      for (final ex in mapDocs(snapshot)) {
+        byId[ex.exerciseId] = ex;
       }
-      return e.primaryMuscle.toLowerCase() == gnLow ||
-          e.bodyPart.toLowerCase() == gnLow;
-    }).toList();
+    }
+
+    // Fallback for case-format mismatch in existing data.
+    if (byId.isEmpty) {
+      final snapshot = await exercisesCol.get();
+      final all = mapDocs(snapshot);
+      final gnLow = widget.groupName.toLowerCase();
+      for (final e in all) {
+        if ((e.category.isNotEmpty && e.category.toLowerCase() == gnLow) ||
+            e.primaryMuscle.toLowerCase() == gnLow ||
+            e.bodyPart.toLowerCase() == gnLow) {
+          byId[e.exerciseId] = e;
+        }
+      }
+    }
+
+    _allExercises = byId.values.toList();
+    unawaited(warmUpGifCache(_allExercises));
 
     return _allExercises;
   }
@@ -330,6 +373,7 @@ class _MuscleGroupScreenState extends State<MuscleGroupScreen> {
                     }
 
                     return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                       itemCount: displayList.length,
                       separatorBuilder: (context, index) =>
@@ -479,6 +523,8 @@ class _ExerciseCard extends StatelessWidget {
     final subtitle = [exercise.primaryMuscle, exercise.equipment]
         .where((s) => s.isNotEmpty)
         .join(' • ');
+    final gifUrl = exercise.gifUrl.trim();
+    final imageUrl = exercise.imageUrl.trim();
 
     return GestureDetector(
       onTap: () {
@@ -515,21 +561,44 @@ class _ExerciseCard extends StatelessWidget {
                 color: Colors.blue.withAlpha(25),
               ),
               clipBehavior: Clip.antiAlias,
-              child: exercise.imageUrl.isNotEmpty
-                  ? Image.asset(
-                      exercise.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.fitness_center_rounded,
-                        color: Colors.blue,
-                        size: 28,
-                      ),
+              child: gifUrl.isNotEmpty
+                  ? StaticGifThumbnail(
+                      url: gifUrl,
+                      size: 60,
+                      errorIcon: Icons.fitness_center_rounded,
+                      errorIconColor: Colors.blue,
+                      errorIconSize: 28,
                     )
-                  : const Icon(
-                      Icons.fitness_center_rounded,
-                      color: Colors.blue,
-                      size: 28,
-                    ),
+                  : imageUrl.isNotEmpty
+                      ? imageUrl.startsWith('http')
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              cacheWidth: 120,
+                              cacheHeight: 120,
+                              filterQuality: FilterQuality.low,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                Icons.fitness_center_rounded,
+                                color: Colors.blue,
+                                size: 28,
+                              ),
+                            )
+                          : Image.asset(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                Icons.fitness_center_rounded,
+                                color: Colors.blue,
+                                size: 28,
+                              ),
+                            )
+                      : const Icon(
+                          Icons.fitness_center_rounded,
+                          color: Colors.blue,
+                          size: 28,
+                        ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -581,3 +650,5 @@ class _ExerciseCard extends StatelessWidget {
     );
   }
 }
+
+

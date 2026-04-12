@@ -179,15 +179,18 @@ class _MyScheduleScreenState extends State<MyScheduleScreen> {
   Widget _buildLegend() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _LegendDot(color: _kLime, label: 'Finish'),
-          const SizedBox(width: 20),
-          _LegendDot(color: Colors.white, label: 'Scheduled'),
-          const SizedBox(width: 20),
-          _LegendDot(color: _kSkipRed, label: 'Skip'),
-        ],
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _LegendDot(color: _kLime, label: 'Finish'),
+            const SizedBox(width: 20),
+            _LegendDot(color: Colors.white, label: 'Scheduled'),
+            const SizedBox(width: 20),
+            _LegendDot(color: _kSkipRed, label: 'Skip'),
+          ],
+        ),
       ),
     );
   }
@@ -202,12 +205,16 @@ class _MyScheduleScreenState extends State<MyScheduleScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            '${_kMonthNames[_displayedMonth.month - 1]} ${_displayedMonth.year}',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              '${_kMonthNames[_displayedMonth.month - 1]} ${_displayedMonth.year}',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Row(
@@ -393,23 +400,39 @@ class _CalendarMonthGrid extends StatelessWidget {
                 final showRoutines = plan != null && plan!.trainingDays.contains(weekday);
                 
                 // Find status for this date
+                final activePlanId = plan?.planId;
+
                 final history = histories.firstWhere(
-                  (h) => h.date.year == date.year && h.date.month == date.month && h.date.day == date.day,
+                  (h) =>
+                      h.date.year == date.year &&
+                      h.date.month == date.month &&
+                      h.date.day == date.day &&
+                      h.completionPercentage >= 0.0 &&
+                      (activePlanId == null || h.planId == activePlanId),
                   orElse: () => WorkoutHistoryModel(id: '', userId: '', routineName: '', date: DateTime(2000), durationSeconds: 0, restTimeSeconds: 0, caloriesBurned: 0, completionPercentage: 0, totalWeightLifted: 0, totalReps: 0),
                 );
 
                 final bool hasHistory = history.id.isNotEmpty;
                 final bool completed = hasHistory && history.completionPercentage >= 0.0;
-                final bool explicitSkipped = hasHistory && history.completionPercentage == -1.0;
+                final bool explicitSkipped = histories.any((h) =>
+                    h.date.year == date.year &&
+                    h.date.month == date.month &&
+                    h.date.day == date.day &&
+                    h.completionPercentage == -1.0 &&
+                    (activePlanId == null || h.planId == activePlanId));
                 
                 final dateOnly = DateTime(date.year, date.month, date.day);
                 final todayOnly = DateTime(today.year, today.month, today.day);
                 final planStartOnly = plan != null ? DateTime(plan!.createdAt.year, plan!.createdAt.month, plan!.createdAt.day) : DateTime(2000);
+                final planEndOnly = plan != null
+                  ? planStartOnly.add(Duration(days: (plan!.totalWeeks * 7) - 1))
+                  : DateTime(2100);
                 
                 final bool isPast = dateOnly.isBefore(todayOnly);
                 final bool isAfterStart = !dateOnly.isBefore(planStartOnly);
-                final bool isMissed = isPast && isAfterStart && showRoutines && !completed && !explicitSkipped;
-                final bool skipped = explicitSkipped || isMissed;
+                final bool isBeforeOrOnEnd = !dateOnly.isAfter(planEndOnly);
+                final bool isWithinPlanRange = isAfterStart && isBeforeOrOnEnd;
+                final bool skipped = explicitSkipped;
 
                 return GestureDetector(
                   onTap: () => onDateSelected(date),
@@ -419,7 +442,7 @@ class _CalendarMonthGrid extends StatelessWidget {
                     isCurrentMonth: isCurrentMonth,
                     isToday: isToday,
                     isSelected: isSelected,
-                    routineNames: (showRoutines && isAfterStart) ? routines : [],
+                    routineNames: (showRoutines && isWithinPlanRange) ? routines : [],
                     isSunday: col == 6,
                     isCompleted: completed,
                     isSkipped: skipped,
@@ -722,7 +745,11 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     );
   }
 
-  void _showRecordMenu(RoutineModel routine, WorkoutHistoryModel? todayHistory) {
+  void _showRecordMenu(
+    RoutineModel routine,
+    WorkoutHistoryModel? todayHistory,
+    bool canShiftWholePlan,
+  ) {
     final bool isSkipped = todayHistory != null && todayHistory.completionPercentage == -1.0;
 
     showModalBottomSheet<void>(
@@ -809,13 +836,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                     ),
                     child: Column(
                       children: [
-                        _MenuTile(
-                          icon: Icons.swap_vert_rounded,
-                          title: 'Move Workout',
-                          hasProBadge: true,
-                          onTap: () => Navigator.of(ctx).pop(),
-                        ),
-                        const Divider(height: 1, color: Colors.white10, indent: 56),
+
                         _MenuTile(
                           icon: Icons.circle,
                           iconColor: _kSkipRed,
@@ -829,7 +850,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                             }
                           },
                         ),
-                        if (!isSkipped) ...[
+                        if (!isSkipped && canShiftWholePlan) ...[
                           const Divider(height: 1, color: Colors.white10, indent: 56),
                           _MenuTile(
                             icon: Icons.calendar_today_rounded,
@@ -895,13 +916,25 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     );
   }
 
-  /// Shows a dialog letting the user shift the whole plan forward/backward by 1–3 weeks.
+  /// Shows a dialog letting the user shift upcoming workouts forward by 1–3 weeks.
   void _showShiftDialog() {
-    final fromDate = widget.selectedDate;
-    // Generate shift options: +1 wk, +2 wk, +3 wk (and negative if already shifted)
-    final List<int> shiftOptions = [-3, -2, -1, 1, 2, 3];
-    // Default to +1 wk (index 3 in the list)
-    int selectedIndex = 3;
+    final now = DateTime.now();
+    final todayOnly = DateTime(now.year, now.month, now.day);
+    final fromDate = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+      widget.selectedDate.day,
+    );
+
+    if (fromDate.isBefore(todayOnly)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chỉ có thể dời lịch từ hôm nay trở đi.')),
+      );
+      return;
+    }
+
+    final List<int> shiftOptions = [1, 2, 3];
+    int selectedIndex = 0;
 
     final monthNames = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -1028,32 +1061,34 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
     );
   }
 
-  /// Applies the shift by updating the plan's trainingDays in Firestore.
-  /// Each training day is rotated by [weeks * 7] days to remap weekdays.
+  /// Applies the shift by moving plan start date forward in Firestore.
   Future<void> _applyShift(int weeks) async {
     try {
-      // Shift training days: rotate weekday numbers
-      // e.g. if trainingDays = [1, 3, 5] and shift = +1 week,
-      // the days stay the same (Mon, Wed, Fri) since it's a weekly cycle.
-      // What actually shifts is the routine-to-day mapping.
-      // We rotate the routines list instead of the days.
       final plan = widget.plan;
-      final routines = List<RoutineModel>.from(plan.routines);
+      final now = DateTime.now();
+      final todayOnly = DateTime(now.year, now.month, now.day);
+      final selectedOnly = DateTime(
+        widget.selectedDate.year,
+        widget.selectedDate.month,
+        widget.selectedDate.day,
+      );
 
-      // Rotate routine dayOfWeek by shifting
-      final shiftDays = (weeks * 7) % 7; // How many weekday positions to shift
-      final newRoutines = routines.map((r) {
-        int newDay = ((r.dayOfWeek - 1 + shiftDays) % 7) + 1;
-        return r.copyWith(dayOfWeek: newDay);
-      }).toList();
+      if (selectedOnly.isBefore(todayOnly)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể dời lịch cho ngày đã qua.')),
+        );
+        return;
+      }
 
-      final newTrainingDays = plan.trainingDays.map((d) {
-        return ((d - 1 + shiftDays) % 7) + 1;
-      }).toList()..sort();
+      final baseCreatedAt = DateTime(
+        plan.createdAt.year,
+        plan.createdAt.month,
+        plan.createdAt.day,
+      );
+      final newCreatedAt = baseCreatedAt.add(Duration(days: weeks * 7));
 
       final updatedPlan = plan.copyWith(
-        routines: newRoutines,
-        trainingDays: newTrainingDays,
+        createdAt: newCreatedAt,
       );
 
       await _workoutRepository.updatePlan(updatedPlan);
@@ -1061,13 +1096,13 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Plan shifted by $weeks week${weeks.abs() > 1 ? 's' : ''}')),
+          SnackBar(content: Text('Đã dời lịch thêm $weeks tuần.')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to shift plan')),
+          const SnackBar(content: Text('Không thể dời lịch.')),
         );
       }
     }
@@ -1075,6 +1110,41 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedDateOnly = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+      widget.selectedDate.day,
+    );
+    final planStartOnly = DateTime(
+      widget.plan.createdAt.year,
+      widget.plan.createdAt.month,
+      widget.plan.createdAt.day,
+    );
+    final planEndOnly = planStartOnly.add(
+      Duration(days: (widget.plan.totalWeeks * 7) - 1),
+    );
+
+    if (selectedDateOnly.isBefore(planStartOnly) ||
+        selectedDateOnly.isAfter(planEndOnly)) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _kCardBg,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          'No workout scheduled for this date',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            color: Colors.white70,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
     final todayWeekday = widget.selectedDate.weekday;
     final isTrainingDay = widget.plan.trainingDays.contains(todayWeekday);
 
@@ -1119,49 +1189,44 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
         final todayHistory = _findTodayHistory(histories, todayRoutine!);
         final bool hasResult = todayHistory != null && todayHistory.completionPercentage >= 0.0;
         final bool explicitSkipped = todayHistory != null && todayHistory.completionPercentage == -1.0;
+        final bool hasAnyRecord = todayHistory != null;
         
-        final selectedDateOnly = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
         final now = DateTime.now();
         final todayOnly = DateTime(now.year, now.month, now.day);
         final planStartOnly = DateTime(widget.plan.createdAt.year, widget.plan.createdAt.month, widget.plan.createdAt.day);
+        final planEndOnly = planStartOnly.add(Duration(days: (widget.plan.totalWeeks * 7) - 1));
         
         final bool isPast = selectedDateOnly.isBefore(todayOnly);
         final bool isAfterStart = !selectedDateOnly.isBefore(planStartOnly);
-        final bool isMissed = isPast && isAfterStart && !hasResult && !explicitSkipped;
-        
-        final bool isSkipped = explicitSkipped || isMissed;
+        final bool isBeforeOrOnEnd = !selectedDateOnly.isAfter(planEndOnly);
+        final bool isWithinPlanRange = isAfterStart && isBeforeOrOnEnd;
+        final bool isSkipped = explicitSkipped;
+        final bool canShiftWholePlan =
+            !isPast && isWithinPlanRange && !hasAnyRecord;
 
         return GestureDetector(
-          onTap: () => (isSkipped) ? _showRecordMenu(todayRoutine!, todayHistory) : _openRoutine(todayRoutine!, todayHistory),
+          onTap: () => (isSkipped)
+              ? _showRecordMenu(todayRoutine!, todayHistory, canShiftWholePlan)
+              : _openRoutine(todayRoutine!, todayHistory),
           child: Container(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
             decoration: BoxDecoration(
               color: _kCardBg,
               borderRadius: BorderRadius.circular(16),
-              border: hasResult 
-                ? Border.all(color: _kLime.withValues(alpha: 0.6)) 
-                : (isSkipped ? Border.all(color: _kSkipRed.withValues(alpha: 0.6)) : null),
             ),
             child: Row(
               children: [
                 // Status button
                 GestureDetector(
-                  onTap: () => (isSkipped) ? _showRecordMenu(todayRoutine!, todayHistory) : _openRoutine(todayRoutine!, todayHistory),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: hasResult ? _kLime : (isSkipped ? _kSkipRed : Colors.white),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      hasResult ? Icons.check_rounded : (isSkipped ? Icons.close_rounded : Icons.play_arrow_rounded),
-                      color: isSkipped || hasResult ? Colors.white : Colors.black,
-                      size: 30,
-                    ),
+                  onTap: () => (isSkipped)
+                      ? _showRecordMenu(todayRoutine!, todayHistory, canShiftWholePlan)
+                      : _openRoutine(todayRoutine!, todayHistory),
+                  child: _StatusPulseButton(
+                    hasResult: hasResult,
+                    isSkipped: isSkipped,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 // Thumbnail
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -1171,7 +1236,7 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                     child: _buildThumbnail(),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 // Routine name
                 Expanded(
                   child: Column(
@@ -1189,19 +1254,15 @@ class _TodayWorkoutBottomCardState extends State<_TodayWorkoutBottomCard> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        isSkipped ? 'Bỏ qua buổi tập' : (hasResult ? 'Đã có kết quả buổi tập' : 'Chưa có kết quả buổi tập'),
-                        style: GoogleFonts.inter(
-                          color: isSkipped ? _kSkipRed : (hasResult ? _kLime : Colors.white54),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
                     ],
                   ),
                 ),
                 IconButton(
-                  onPressed: () => _showRecordMenu(todayRoutine!, todayHistory),
+                  onPressed: () => _showRecordMenu(
+                    todayRoutine!,
+                    todayHistory,
+                    canShiftWholePlan,
+                  ),
                   icon: const Icon(
                     Icons.more_vert_rounded,
                     color: Colors.white,
@@ -1296,6 +1357,99 @@ class _MenuTile extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Status Pulse Button
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StatusPulseButton extends StatefulWidget {
+  const _StatusPulseButton({required this.hasResult, required this.isSkipped});
+  final bool hasResult;
+  final bool isSkipped;
+
+  @override
+  State<_StatusPulseButton> createState() => _StatusPulseButtonState();
+}
+
+class _StatusPulseButtonState extends State<_StatusPulseButton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+    if (!widget.hasResult && !widget.isSkipped) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_StatusPulseButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.hasResult && !widget.isSkipped) {
+      if (!_controller.isAnimating) _controller.repeat(reverse: true);
+    } else {
+      _controller.stop();
+      _controller.value = 0.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = widget.hasResult ? _kLime : (widget.isSkipped ? _kSkipRed : Colors.white);
+
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Pulse halo
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: 1.0 + (_controller.value * 0.15),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: baseColor.withValues(alpha: 0.12 + (_controller.value * 0.08)),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              );
+            },
+          ),
+          // Inner circle
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: baseColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              widget.hasResult 
+                  ? Icons.check_rounded 
+                  : (widget.isSkipped ? Icons.close_rounded : Icons.play_arrow_rounded),
+              color: widget.isSkipped || widget.hasResult ? Colors.white : Colors.black,
+              size: 18,
+            ),
+          ),
+        ],
       ),
     );
   }

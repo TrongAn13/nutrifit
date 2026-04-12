@@ -17,6 +17,7 @@ class ExerciseModel {
   final String description;
   final String warning;
   final String imageUrl;
+  final String gifUrl;
   final String category; // e.g. 'Cardio', 'Gym', 'Stretching'
   final DateTime createdAt;
 
@@ -34,6 +35,7 @@ class ExerciseModel {
     this.description = '',
     this.warning = '',
     this.imageUrl = '',
+    this.gifUrl = '',
     this.category = '',
     required this.createdAt,
   });
@@ -78,6 +80,7 @@ class ExerciseModel {
       description: json['description'] as String? ?? '',
       warning: json['warning'] as String? ?? '',
       imageUrl: json['imageUrl'] as String? ?? '',
+      gifUrl: json['gifUrl'] as String? ?? '',
       category: json['category'] as String? ?? '',
       createdAt: parsedDate,
     );
@@ -98,6 +101,7 @@ class ExerciseModel {
       'description': description,
       'warning': warning,
       'imageUrl': imageUrl,
+      'gifUrl': gifUrl,
       'category': category,
       'createdAt': Timestamp.fromDate(createdAt),
     };
@@ -119,6 +123,7 @@ class ExerciseModel {
     String? description,
     String? warning,
     String? imageUrl,
+    String? gifUrl,
     String? category,
     DateTime? createdAt,
   }) {
@@ -136,6 +141,7 @@ class ExerciseModel {
       description: description ?? this.description,
       warning: warning ?? this.warning,
       imageUrl: imageUrl ?? this.imageUrl,
+      gifUrl: gifUrl ?? this.gifUrl,
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
     );

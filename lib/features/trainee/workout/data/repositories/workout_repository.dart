@@ -1,56 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../data_sources/workout_remote_data_source.dart';
 import '../models/exercise_model.dart';
 import '../models/workout_plan_model.dart';
 import '../models/workout_history_model.dart';
 
-/// Handles Firestore operations for workout-related plan collections.
+/// Handles workout data orchestration and error mapping.
 class WorkoutRepository {
-  final FirebaseFirestore _firestore;
-  final FirebaseAuth _auth;
+  final WorkoutRemoteDataSource _remoteDataSource;
 
-  WorkoutRepository({FirebaseFirestore? firestore, FirebaseAuth? auth})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
-      _auth = auth ?? FirebaseAuth.instance;
-
-    /// Reference to trainee-owned workout plans.
-  CollectionReference<Map<String, dynamic>> get _plansRef =>
-      _firestore.collection('trainee_templates');
-
-  /// Reference to the `coach_templates` collection for reusable plans.
-  CollectionReference<Map<String, dynamic>> get _templatesRef =>
-      _firestore.collection('coach_templates');
-
-  /// Reference to system-owned templates visible to all users.
-  CollectionReference<Map<String, dynamic>> get _systemTemplatesRef =>
-      _firestore.collection('workout_plans');
-
-    /// Reference to user favorite system plans.
-    CollectionReference<Map<String, dynamic>> get _favoriteSystemPlansRef =>
-      _firestore.collection('user_favorite_system_plans');
-
-  /// Returns the currently signed-in trainee's UID, or throws.
-  String get _uid {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception('Chưa đăng nhập.');
-    return user.uid;
-  }
+  WorkoutRepository({
+    WorkoutRemoteDataSource? remoteDataSource,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  }) : _remoteDataSource =
+           remoteDataSource ??
+           WorkoutRemoteDataSource(firestore: firestore, auth: auth);
 
   // ───────────────────────── Read ─────────────────────────
 
   /// Fetches all **active** workout plans belonging to the current trainee.
   Future<List<WorkoutPlanModel>> getActivePlans() async {
     try {
-      final snapshot = await _plansRef
-          .where('userId', isEqualTo: _uid)
-          .where('isActive', isEqualTo: true)
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      return snapshot.docs
-          .map((doc) => WorkoutPlanModel.fromJson(doc.data()))
-          .toList();
+      return await _remoteDataSource.getActivePlans();
     } catch (e) {
       throw Exception('Không thể tải giáo án: ${e.toString()}');
     }
@@ -59,14 +32,7 @@ class WorkoutRepository {
   /// Fetches ALL workout plans (active + inactive) for the current trainee.
   Future<List<WorkoutPlanModel>> getAllPlans() async {
     try {
-      final snapshot = await _plansRef
-          .where('userId', isEqualTo: _uid)
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      return snapshot.docs
-          .map((doc) => WorkoutPlanModel.fromJson(doc.data()))
-          .toList();
+      return await _remoteDataSource.getAllPlans();
     } catch (e) {
       throw Exception('Không thể tải giáo án: ${e.toString()}');
     }
@@ -75,14 +41,7 @@ class WorkoutRepository {
   /// Fetches ALL coach templates created by the current trainee.
   Future<List<WorkoutPlanModel>> getCoachTemplates() async {
     try {
-      final snapshot = await _templatesRef
-          .where('userId', isEqualTo: _uid)
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      return snapshot.docs
-          .map((doc) => WorkoutPlanModel.fromJson(doc.data()))
-          .toList();
+      return await _remoteDataSource.getCoachTemplates();
     } catch (e) {
       throw Exception('Không thể tải mẫu giáo án: ${e.toString()}');
     }
@@ -91,13 +50,7 @@ class WorkoutRepository {
   /// Fetches all global templates managed by the system.
   Future<List<WorkoutPlanModel>> getSystemTemplates() async {
     try {
-      final snapshot = await _systemTemplatesRef
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      return snapshot.docs
-          .map((doc) => WorkoutPlanModel.fromJson(doc.data()))
-          .toList();
+      return await _remoteDataSource.getSystemTemplates();
     } catch (e) {
       throw Exception('Không thể tải giáo án hệ thống: ${e.toString()}');
     }
@@ -106,21 +59,7 @@ class WorkoutRepository {
   /// Fetches all favorite system plans of current user.
   Future<List<WorkoutPlanModel>> getFavoriteSystemPlans() async {
     try {
-      final snapshot = await _favoriteSystemPlansRef
-          .where('userId', isEqualTo: _uid)
-          .orderBy('favoriteAt', descending: true)
-          .get();
-
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        final planData = Map<String, dynamic>.from(
-          (data['planData'] as Map<String, dynamic>? ?? const {}),
-        );
-        if ((planData['planId'] as String?)?.isEmpty ?? true) {
-          planData['planId'] = data['planId'] as String? ?? '';
-        }
-        return WorkoutPlanModel.fromJson(planData);
-      }).toList();
+      return await _remoteDataSource.getFavoriteSystemPlans();
     } catch (e) {
       throw Exception('Không thể tải giáo án yêu thích: ${e.toString()}');
     }
@@ -129,19 +68,7 @@ class WorkoutRepository {
   /// Fetches only favorite plan IDs of current user.
   Future<Set<String>> getFavoritePlanIds() async {
     try {
-      final snapshot = await _favoriteSystemPlansRef
-          .where('userId', isEqualTo: _uid)
-          .get();
-
-      final ids = <String>{};
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final planId = (data['planId'] as String?)?.trim() ?? '';
-        if (planId.isNotEmpty) {
-          ids.add(planId);
-        }
-      }
-      return ids;
+      return await _remoteDataSource.getFavoritePlanIds();
     } catch (e) {
       throw Exception('Không thể tải danh sách yêu thích: ${e.toString()}');
     }
@@ -150,9 +77,7 @@ class WorkoutRepository {
   /// Checks if a system plan is marked as favorite by current user.
   Future<bool> isSystemPlanFavorite(String planId) async {
     try {
-      final docId = '${_uid}_$planId';
-      final doc = await _favoriteSystemPlansRef.doc(docId).get();
-      return doc.exists;
+      return await _remoteDataSource.isSystemPlanFavorite(planId);
     } catch (e) {
       throw Exception('Không thể kiểm tra trạng thái yêu thích: ${e.toString()}');
     }
@@ -164,19 +89,10 @@ class WorkoutRepository {
     required bool isFavorite,
   }) async {
     try {
-      final docId = '${_uid}_${plan.planId}';
-      final docRef = _favoriteSystemPlansRef.doc(docId);
-      if (isFavorite) {
-        await docRef.set({
-          'docId': docId,
-          'userId': _uid,
-          'planId': plan.planId,
-          'favoriteAt': Timestamp.fromDate(DateTime.now()),
-          'planData': plan.toJson(),
-        });
-      } else {
-        await docRef.delete();
-      }
+      await _remoteDataSource.setSystemPlanFavorite(
+        plan: plan,
+        isFavorite: isFavorite,
+      );
     } catch (e) {
       throw Exception('Không thể cập nhật giáo án yêu thích: ${e.toString()}');
     }
@@ -192,26 +108,11 @@ class WorkoutRepository {
     String? excludePlanId,
   }) async {
     try {
-      final normalizedName = planName.trim().toLowerCase();
-      if (normalizedName.isEmpty) return false;
-
-      final ref = isTemplate ? _templatesRef : _plansRef;
-      final snapshot = await ref.where('userId', isEqualTo: _uid).get();
-
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final existingId = (data['planId'] as String?) ?? doc.id;
-        if (excludePlanId != null && existingId == excludePlanId) {
-          continue;
-        }
-
-        final existingName = ((data['name'] as String?) ?? '').trim().toLowerCase();
-        if (existingName == normalizedName) {
-          return true;
-        }
-      }
-
-      return false;
+      return await _remoteDataSource.isPlanNameTaken(
+        planName: planName,
+        isTemplate: isTemplate,
+        excludePlanId: excludePlanId,
+      );
     } catch (e) {
       throw Exception('Không thể kiểm tra trùng tên giáo án: ${e.toString()}');
     }
@@ -222,8 +123,7 @@ class WorkoutRepository {
   /// Creates a new workout plan document.
   Future<void> createPlan(WorkoutPlanModel plan) async {
     try {
-      final ref = plan.isTemplate ? _templatesRef : _plansRef;
-      await ref.doc(plan.planId).set(plan.toJson());
+      await _remoteDataSource.createPlan(plan);
     } catch (e) {
       throw Exception('Không thể tạo giáo án: ${e.toString()}');
     }
@@ -232,10 +132,7 @@ class WorkoutRepository {
   /// Updates an existing workout plan document or creates it if it doesn't exist.
   Future<void> updatePlan(WorkoutPlanModel plan) async {
     try {
-      final ref = plan.isTemplate ? _templatesRef : _plansRef;
-      await ref
-          .doc(plan.planId)
-          .set(plan.toJson(), SetOptions(merge: true));
+      await _remoteDataSource.updatePlan(plan);
     } catch (e) {
       throw Exception('Không thể lưu giáo án: ${e.toString()}');
     }
@@ -246,16 +143,7 @@ class WorkoutRepository {
   /// Ensures only ONE plan is active at any time.
   Future<void> setActivePlan(String planId) async {
     try {
-      final snapshot = await _plansRef
-          .where('userId', isEqualTo: _uid)
-          .get();
-
-      final batch = _firestore.batch();
-      for (final doc in snapshot.docs) {
-        final isTarget = doc.id == planId;
-        batch.update(doc.reference, {'isActive': isTarget});
-      }
-      await batch.commit();
+      await _remoteDataSource.setActivePlan(planId);
     } catch (e) {
       throw Exception('Không thể kích hoạt giáo án: ${e.toString()}');
     }
@@ -264,7 +152,7 @@ class WorkoutRepository {
   /// Deletes a workout plan by its [planId].
   Future<void> deletePlan(String planId) async {
     try {
-      await _plansRef.doc(planId).delete();
+      await _remoteDataSource.deletePlan(planId);
     } catch (e) {
       throw Exception('Không thể xóa giáo án: ${e.toString()}');
     }
@@ -273,7 +161,7 @@ class WorkoutRepository {
   /// Deletes a coach template by its [planId].
   Future<void> deleteCoachTemplate(String planId) async {
     try {
-      await _templatesRef.doc(planId).delete();
+      await _remoteDataSource.deleteCoachTemplate(planId);
     } catch (e) {
       throw Exception('Không thể xóa mẫu giáo án: ${e.toString()}');
     }
@@ -284,18 +172,7 @@ class WorkoutRepository {
   /// Marks today's daily log as workout completed.
   Future<void> markWorkoutCompleted() async {
     try {
-      final today = DateTime.now();
-      final logId =
-          '${_uid}_${today.year}${today.month.toString().padLeft(2, '0')}${today.day.toString().padLeft(2, '0')}';
-
-      await _firestore.collection('daily_logs').doc(logId).set({
-        'logId': logId,
-        'userId': _uid,
-        'date': Timestamp.fromDate(
-          DateTime(today.year, today.month, today.day),
-        ),
-        'workoutCompleted': true,
-      }, SetOptions(merge: true));
+      await _remoteDataSource.markWorkoutCompleted();
     } catch (e) {
       throw Exception('Không thể lưu kết quả tập: ${e.toString()}');
     }
@@ -303,14 +180,10 @@ class WorkoutRepository {
 
   // ───────────────────────── Workout History ─────────────────────────
 
-  /// Reference to the `workout_histories` collection.
-  CollectionReference<Map<String, dynamic>> get _historiesRef =>
-      _firestore.collection('workout_histories');
-
   /// Saves a completed workout history to Firestore.
   Future<void> saveWorkoutHistory(WorkoutHistoryModel history) async {
     try {
-      await _historiesRef.doc(history.id).set(history.toJson());
+      await _remoteDataSource.saveWorkoutHistory(history);
     } catch (e) {
       throw Exception('Không thể lưu lịch sử tập luyện: ${e.toString()}');
     }
@@ -319,7 +192,7 @@ class WorkoutRepository {
   /// Deletes a workout history entry by its [historyId].
   Future<void> deleteWorkoutHistory(String historyId) async {
     try {
-      await _historiesRef.doc(historyId).delete();
+      await _remoteDataSource.deleteWorkoutHistory(historyId);
     } catch (e) {
       throw Exception('Không thể xóa lịch sử tập luyện: ${e.toString()}');
     }
@@ -328,14 +201,7 @@ class WorkoutRepository {
   /// Fetches all workout histories for the current trainee, ordered by date.
   Future<List<WorkoutHistoryModel>> getWorkoutHistories() async {
     try {
-      final snapshot = await _historiesRef
-          .where('userId', isEqualTo: _uid)
-          .orderBy('date', descending: true)
-          .get();
-
-      return snapshot.docs
-          .map((doc) => WorkoutHistoryModel.fromJson(doc.data()))
-          .toList();
+      return await _remoteDataSource.getWorkoutHistories();
     } catch (e) {
       throw Exception('Không thể tải lịch sử tập luyện: ${e.toString()}');
     }
@@ -343,39 +209,13 @@ class WorkoutRepository {
 
   // ───────────────────────── Exercises ─────────────────────────
 
-  /// Reference to the `exercises` collection.
-  CollectionReference<Map<String, dynamic>> get _exercisesRef =>
-      _firestore.collection('exercises');
-
   /// Fetches exercises that are either system-wide or created by [userId].
   ///
   /// Firestore does not support OR across different fields, so we run two
   /// parallel queries and merge the results, deduplicating by [exerciseId].
   Future<List<ExerciseModel>> getExercises(String userId) async {
     try {
-      final results = await Future.wait([
-        _exercisesRef.where('isSystem', isEqualTo: true).get(),
-        _exercisesRef.where('userId', isEqualTo: userId).get(),
-      ]);
-
-      final Map<String, ExerciseModel> exerciseMap = {};
-      for (final snapshot in results) {
-        for (final doc in snapshot.docs) {
-          final Map<String, dynamic> data = Map<String, dynamic>.from(
-            doc.data(),
-          );
-          data['exerciseId'] = doc.id;
-
-          final exercise = ExerciseModel.fromJson(data);
-          // --- KẾT THÚC SỬA ---
-
-          exerciseMap[exercise.exerciseId] = exercise;
-        }
-      }
-      final list = exerciseMap.values.toList();
-      list.sort((a, b) => a.name.compareTo(b.name));
-
-      return list;
+      return await _remoteDataSource.getExercises(userId);
     } catch (e) {
       throw Exception('Không thể tải bài tập: ${e.toString()}');
     }
@@ -384,9 +224,39 @@ class WorkoutRepository {
   /// Adds a new trainee-created exercise to the `exercises` collection.
   Future<void> createCustomExercise(ExerciseModel exercise) async {
     try {
-      await _exercisesRef.doc(exercise.exerciseId).set(exercise.toJson());
+      await _remoteDataSource.createCustomExercise(exercise);
     } catch (e) {
       throw Exception('Không thể tạo bài tập: ${e.toString()}');
+    }
+  }
+
+  /// Fetches a GIF URL for a specific exercise by its name.
+  Future<String?> getExerciseGifByName(String name) async {
+    try {
+      return await _remoteDataSource.getExerciseGifByName(name);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Fetches an image URL for a specific exercise by its name.
+  Future<String?> getExerciseImageByName(String name) async {
+    try {
+      return await _remoteDataSource.getExerciseImageByName(name);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Fetches a workout plan image URL by [planId].
+  ///
+  /// A plan can be stored in one of these collections depending on origin:
+  /// trainee templates, coach templates, or system plans.
+  Future<String?> getPlanImageById(String planId) async {
+    try {
+      return await _remoteDataSource.getPlanImageById(planId);
+    } catch (_) {
+      return null;
     }
   }
 }

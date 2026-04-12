@@ -1,13 +1,17 @@
-import 'dart:math';
+import 'dart:math' as math;
 
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:gif_view/gif_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../../core/routes/app_router.dart';
 import '../../data/models/workout_history_model.dart';
 import '../../data/models/routine_model.dart';
-import '../../data/repositories/workout_repository.dart';
+import '../../logic/workout_result_cubit.dart';
+import '../widgets/workout_volume_progress_bar.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -26,26 +30,173 @@ class WorkoutResultScreen extends StatefulWidget {
   final VoidCallback? onClose;
   final bool showSaveButton;
   final bool showBackButton;
-  final IconData topRightIcon;
-
   const WorkoutResultScreen({
     super.key,
     required this.history,
     this.onClose,
     this.showSaveButton = true,
     this.showBackButton = false,
-    this.topRightIcon = Icons.more_horiz_rounded,
   });
 
   @override
   State<WorkoutResultScreen> createState() => _WorkoutResultScreenState();
 }
 
-class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
+class _WorkoutResultScreenState extends State<WorkoutResultScreen>
+    with SingleTickerProviderStateMixin {
   /// Effort slider value: 0.0 (No Effort) to 1.0 (Max Effort).
   double _effortValue = 0.5;
 
+  late final WorkoutResultCubit _resultCubit;
+  late final AnimationController _confettiController;
+  final List<_ConfettiParticle> _confettiParticles = [];
+  bool _showConfetti = true;
+
   WorkoutHistoryModel get history => widget.history;
+
+  @override
+  void initState() {
+    super.initState();
+    _resultCubit = WorkoutResultCubit.fromContext(
+      context: context,
+      history: widget.history,
+    )..loadAssets();
+
+    _confettiController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && mounted) {
+          setState(() => _showConfetti = false);
+        }
+      });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_confettiParticles.isEmpty) {
+        final size = MediaQuery.of(context).size;
+        _confettiParticles.addAll(_generateConfettiParticles(size));
+      }
+      if (mounted) {
+        _confettiController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _resultCubit.close();
+    _confettiController.dispose();
+    super.dispose();
+  }
+
+  List<_ConfettiParticle> _generateConfettiParticles(Size canvasSize) {
+    final random = math.Random();
+    final burstOrigin = Offset(
+      canvasSize.width / 2,
+      math.min(220, canvasSize.height * 0.30),
+    );
+    final palette = [
+      _kLime,
+      const Color(0xFFFFB703),
+      const Color(0xFF5CE1E6),
+      const Color(0xFFFF5D8F),
+      Colors.white,
+    ];
+
+    return List.generate(72, (_) {
+      final angle = (-math.pi / 2) + (random.nextDouble() - 0.5) * 1.9;
+      final speed = 130 + random.nextDouble() * 150;
+      final velocity = Offset(
+        math.cos(angle) * speed,
+        math.sin(angle) * speed,
+      );
+
+      return _ConfettiParticle(
+        origin: burstOrigin,
+        velocity: velocity,
+        size: 3.5 + random.nextDouble() * 4.5,
+        color: palette[random.nextInt(palette.length)],
+        rotation: random.nextDouble() * math.pi * 2,
+        rotationSpeed: (random.nextDouble() - 0.5) * 5,
+        isCircle: random.nextBool(),
+      );
+    });
+  }
+
+  Widget _buildFullScreenConfettiBurst(Size canvasSize) {
+    if (!_showConfetti) {
+      return const SizedBox.shrink();
+    }
+
+    if (_confettiParticles.isEmpty) {
+      _confettiParticles.addAll(_generateConfettiParticles(canvasSize));
+    }
+
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _confettiController,
+        builder: (context, _) {
+          return RepaintBoundary(
+            child: CustomPaint(
+              size: canvasSize,
+              isComplex: false,
+              willChange: true,
+              painter: _ConfettiPainter(
+                progress: Curves.easeOutCubic.transform(_confettiController.value),
+                particles: _confettiParticles,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GIF Widgets
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Builds a static GIF thumbnail for an exercise detail card.
+  Widget _buildExerciseGif(
+    String exerciseName,
+    double size,
+    Map<String, String> exerciseGifs,
+  ) {
+    final gifUrl = exerciseGifs[exerciseName];
+
+    if (gifUrl != null && gifUrl.isNotEmpty) {
+      return GifView.network(
+        gifUrl,
+        autoPlay: false, // Ensure the GIF acts as a static image
+        frameRate: 8,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        progressBuilder: (context) => Center(
+          child: SizedBox(
+            width: size * 0.4,
+            height: size * 0.4,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+              color: _kLime,
+            ),
+          ),
+        ),
+        errorBuilder: (context, error, tryAgain) => Icon(
+          Icons.fitness_center_rounded,
+          color: Colors.white.withValues(alpha: 0.3),
+          size: size * 0.45,
+        ),
+      );
+    }
+
+    return Icon(
+      Icons.fitness_center_rounded,
+      color: Colors.white.withValues(alpha: 0.3),
+      size: size * 0.45,
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Helpers
@@ -68,11 +219,11 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
   }
 
   /// Compute per-exercise volume data for the insights and volume sections.
-  List<_ExerciseVolumeData> _computeVolumeData() {
+  List<_ExerciseVolumeData> _computeVolumeData(WorkoutHistoryModel workoutHistory) {
     final List<_ExerciseVolumeData> result = [];
     double grandTotal = 0;
 
-    for (final ex in history.exercises) {
+    for (final ex in workoutHistory.exercises) {
       final volume = (ex.weight ?? 0) * ex.reps * ex.sets;
       grandTotal += volume;
       result.add(_ExerciseVolumeData(
@@ -99,66 +250,90 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final volumeData = _computeVolumeData();
+    return BlocBuilder<WorkoutResultCubit, WorkoutResultState>(
+      bloc: _resultCubit,
+      builder: (context, resultState) {
+        final currentHistory = resultState.history;
+        final volumeData = _computeVolumeData(currentHistory);
 
-    // Compute insights
-    int totalSets = 0;
-    final int totalReps = history.totalReps;
-    double heaviestLift = 0;
-    String heaviestExercise = '';
-    int heaviestExerciseReps = 0;
+        // Compute insights
+        int totalSets = 0;
+        final int totalReps = currentHistory.totalReps;
+        double heaviestLift = 0;
+        String heaviestExercise = '';
+        int heaviestExerciseReps = 0;
 
-    for (final ex in history.exercises) {
-      totalSets += ex.sets;
-      final w = ex.weight ?? 0;
-      if (w > heaviestLift) {
-        heaviestLift = w;
-        heaviestExercise = ex.exerciseName;
-        heaviestExerciseReps = ex.reps;
-      }
-    }
+        for (final ex in currentHistory.exercises) {
+          totalSets += ex.sets;
+          final w = ex.weight ?? 0;
+          if (w > heaviestLift) {
+            heaviestLift = w;
+            heaviestExercise = ex.exerciseName;
+            heaviestExerciseReps = ex.reps;
+          }
+        }
 
-    return Scaffold(
-      backgroundColor: _kBg,
-      body: CustomScrollView(
-        slivers: [
-          // ── Section 1: Summary Header ──
-          SliverToBoxAdapter(child: _buildSummaryHeader(context)),
+        return Scaffold(
+          backgroundColor: _kBg,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
 
-          // ── Section 2: Workout Insights ──
-          SliverToBoxAdapter(
-            child: _buildInsightsCard(
-              totalSets: totalSets,
-              totalReps: totalReps,
-              heaviestLift: heaviestLift,
-              heaviestExercise: heaviestExercise,
-              highestVolumeSetWeight: heaviestLift,
-              highestVolumeSetReps: heaviestExerciseReps,
-              highestVolumeExercise: heaviestExercise,
-            ),
+              return Stack(
+                children: [
+                  CustomScrollView(
+                    slivers: [
+                      // ── Section 1: Summary Header ──
+                      SliverToBoxAdapter(
+                        child: _buildSummaryHeader(
+                          context,
+                          resultState.summaryImageUrl,
+                        ),
+                      ),
+
+                      // ── Section 2: Workout Insights ──
+                      SliverToBoxAdapter(
+                        child: _buildInsightsCard(
+                          totalSets: totalSets,
+                          totalReps: totalReps,
+                          heaviestLift: heaviestLift,
+                          heaviestExercise: heaviestExercise,
+                          highestVolumeSetWeight: heaviestLift,
+                          highestVolumeSetReps: heaviestExerciseReps,
+                          highestVolumeExercise: heaviestExercise,
+                        ),
+                      ),
+
+                      // ── Section 3: Volume by Exercise ──
+                      SliverToBoxAdapter(
+                        child: _buildVolumeCard(volumeData),
+                      ),
+
+                      // ── Section 4: Workout Details ──
+                      SliverToBoxAdapter(
+                        child: _buildWorkoutDetails(resultState.exerciseGifs),
+                      ),
+
+                      if (widget.showSaveButton)
+                        SliverToBoxAdapter(
+                          child: _buildSaveButton(context),
+                        ),
+
+                      // Bottom spacing
+                      SliverToBoxAdapter(
+                        child: SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+                      ),
+                    ],
+                  ),
+                  Positioned.fill(
+                    child: _buildFullScreenConfettiBurst(canvasSize),
+                  ),
+                ],
+              );
+            },
           ),
-
-          // ── Section 3: Volume by Exercise ──
-          SliverToBoxAdapter(
-            child: _buildVolumeCard(volumeData),
-          ),
-
-          // ── Section 4: Workout Details ──
-          SliverToBoxAdapter(
-            child: _buildWorkoutDetails(),
-          ),
-
-          if (widget.showSaveButton)
-            SliverToBoxAdapter(
-              child: _buildSaveButton(context),
-            ),
-
-          // Bottom spacing
-          SliverToBoxAdapter(
-            child: SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -166,7 +341,7 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
   // Section 1: Summary Header
   // ─────────────────────────────────────────────────────────────────────────
 
-  Widget _buildSummaryHeader(BuildContext context) {
+  Widget _buildSummaryHeader(BuildContext context, String? summaryImageUrl) {
     final dateStr = DateFormat('MMMM dd, yyyy').format(history.date);
     final startTimeStr = DateFormat('HH:mm').format(history.date);
     final endTime = history.date.add(Duration(seconds: history.durationSeconds));
@@ -179,29 +354,29 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
           // ── Top bar: Date + menu ──
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (widget.showBackButton)
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                  )
-                else
-                  const SizedBox(width: 40),
-                Text(
-                  dateStr,
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+            child: SizedBox(
+              height: 40,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (widget.showBackButton)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  Text(
+                    dateStr,
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                GestureDetector(
-                  onTap: () => _showOptionsMenu(context),
-                  child: Icon(widget.topRightIcon, color: Colors.white, size: 24),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -213,18 +388,11 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Confetti particles
-                ..._buildConfettiParticles(),
                 // Plan card
                 Container(
                   width: 140,
                   height: 180,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF3A3A3A), Color(0xFF1E1E1E)],
-                    ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: _kLime.withValues(alpha: 0.3), width: 1),
                     boxShadow: [
@@ -235,25 +403,47 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Icon(Icons.fitness_center_rounded, color: _kLime.withValues(alpha: 0.5), size: 32),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            history.routineName,
-                            style: GoogleFonts.inter(
-                              color: _kLime,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                        _buildSummaryCardImage(summaryImageUrl),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.15),
+                                Colors.black.withValues(alpha: 0.55),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 6,
+                  child: Container(
+                    width: 108,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      gradient: LinearGradient(
+                        colors: [
+                          _kLime.withValues(alpha: 0.0),
+                          _kLime.withValues(alpha: 0.95),
+                          _kLime.withValues(alpha: 0.0),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kLime.withValues(alpha: 0.6),
+                          blurRadius: 16,
+                          spreadRadius: 1,
                         ),
                       ],
                     ),
@@ -264,29 +454,6 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
           ),
 
           const SizedBox(height: 12),
-
-          // ── Add your photo button ──
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: _kCardBgLight,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add_photo_alternate_outlined, color: Colors.white.withValues(alpha: 0.7), size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  'Add your photo',
-                  style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
           // ── Routine name with edit icon ──
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -300,7 +467,6 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              Icon(Icons.edit_rounded, color: _kLime, size: 16),
             ],
           ),
 
@@ -311,28 +477,18 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                '${DateFormat('MMMM dd, yyyy').format(history.date)} • $startTimeStr',
+                '${DateFormat('MMMM dd, yyyy').format(history.date)} • $startTimeStr - ',
                 style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
               ),
-              Text(
-                ' ★',
-                style: GoogleFonts.inter(color: _kLime, fontSize: 13),
-              ),
+
               Text(
                 endTimeStr,
                 style: GoogleFonts.inter(color: Colors.white54, fontSize: 13),
               ),
-              const SizedBox(width: 4),
-              Icon(Icons.edit_rounded, color: _kLime, size: 12),
             ],
           ),
 
           const SizedBox(height: 16),
-
-          // ── Week status strip ──
-          _buildWeekStrip(),
-
-          const SizedBox(height: 20),
 
           // ── Stats grid ──
           _buildStatsGrid(),
@@ -348,89 +504,43 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
     );
   }
 
-  List<Widget> _buildConfettiParticles() {
-    final random = Random(42); // Fixed seed for deterministic layout
-    final colors = [
-      _kLime,
-      Colors.red,
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.cyan,
-    ];
+  Widget _buildSummaryCardImage(String? imageUrl) {
 
-    return List.generate(20, (i) {
-      final left = random.nextDouble() * 300 + 20;
-      final top = random.nextDouble() * 180;
-      final color = colors[random.nextInt(colors.length)];
-      final size = random.nextDouble() * 8 + 4;
-      final isCircle = random.nextBool();
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      if (imageUrl.startsWith('assets/')) {
+        return Image.asset(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildSummaryFallbackVisual(),
+        );
+      }
 
-      return Positioned(
-        left: left,
-        top: top,
-        child: Transform.rotate(
-          angle: random.nextDouble() * pi * 2,
-          child: Container(
-            width: size,
-            height: isCircle ? size : size * 0.4,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(isCircle ? size : 1),
-            ),
-          ),
-        ),
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildSummaryFallbackVisual(),
       );
-    });
+    }
+
+    return _buildSummaryFallbackVisual();
   }
 
-  Widget _buildWeekStrip() {
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final today = history.date.weekday; // 1=Mon, 7=Sun
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(7, (i) {
-        final dayNum = i + 1;
-        final isToday = dayNum == today;
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Column(
-            children: [
-              if (isToday)
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: _kLime,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check_rounded, color: Colors.black, size: 20),
-                )
-              else
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white24, width: 1.5),
-                  ),
-                ),
-              const SizedBox(height: 4),
-              Text(
-                days[i],
-                style: GoogleFonts.inter(
-                  color: isToday ? _kLime : Colors.white38,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        );
-      }),
+  Widget _buildSummaryFallbackVisual() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF3A3A3A), Color(0xFF1E1E1E)],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.fitness_center_rounded,
+          color: _kLime.withValues(alpha: 0.5),
+          size: 32,
+        ),
+      ),
     );
   }
 
@@ -714,7 +824,7 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
   // Section 4: Workout Details
   // ─────────────────────────────────────────────────────────────────────────
 
-  Widget _buildWorkoutDetails() {
+  Widget _buildWorkoutDetails(Map<String, String> exerciseGifs) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
@@ -732,19 +842,23 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Icon(Icons.edit_rounded, color: _kLime, size: 20),
             ],
           ),
           const SizedBox(height: 12),
 
           // Exercise detail cards
-          ...history.exercises.map((ex) => _buildExerciseDetailCard(ex)),
+          ...history.exercises.map(
+            (ex) => _buildExerciseDetailCard(ex, exerciseGifs),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildExerciseDetailCard(ExerciseEntry exercise) {
+  Widget _buildExerciseDetailCard(
+    ExerciseEntry exercise,
+    Map<String, String> exerciseGifs,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -760,7 +874,7 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Exercise thumbnail
+              // Exercise thumbnail with GIF
               Container(
                 width: 56,
                 height: 56,
@@ -768,10 +882,11 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
                   color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  Icons.fitness_center_rounded,
-                  color: Colors.white.withValues(alpha: 0.3),
-                  size: 24,
+                clipBehavior: Clip.antiAlias,
+                child: _buildExerciseGif(
+                  exercise.exerciseName,
+                  56,
+                  exerciseGifs,
                 ),
               ),
               const SizedBox(width: 12),
@@ -849,15 +964,6 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
           }),
 
           const SizedBox(height: 4),
-          // Session badge
-          Text(
-            '🏆 Session',
-            style: GoogleFonts.inter(
-              color: Colors.amber,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
         ],
       ),
     );
@@ -877,7 +983,7 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
           onPressed: () {
             widget.onClose?.call();
             if (context.mounted) {
-              context.pop(true);
+              context.go(AppRouter.main);
             }
           },
           style: FilledButton.styleFrom(
@@ -899,97 +1005,7 @@ class _WorkoutResultScreenState extends State<WorkoutResultScreen> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Options menu
-  // ─────────────────────────────────────────────────────────────────────────
 
-  void _showOptionsMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: _kCardBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.share_rounded, color: Colors.white70),
-              title: Text('Share Results', style: GoogleFonts.inter(color: Colors.white)),
-              onTap: () {
-                Navigator.of(ctx).pop();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-              title: Text('Delete Workout', style: GoogleFonts.inter(color: Colors.redAccent)),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                _showDeleteDialog(context);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: _kCardBg,
-        title: Text(
-          'Delete Workout?',
-          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'Are you sure you want to delete this workout result?',
-          style: GoogleFonts.inter(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.white54)),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => const Center(child: CircularProgressIndicator(color: _kLime)),
-              );
-              try {
-                await WorkoutRepository().deleteWorkoutHistory(history.id);
-              } catch (e) {
-                // Ignore failure
-              }
-              if (context.mounted) {
-                Navigator.of(context).pop(); // Dismiss loading
-                widget.onClose?.call();
-                context.pop(true);
-              }
-            },
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: Text('Delete', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1008,6 +1024,71 @@ class _ExerciseVolumeData {
     required this.maxWeight,
     this.percentage = 0,
   });
+}
+
+class _ConfettiParticle {
+  final Offset origin;
+  final Offset velocity;
+  final double size;
+  final Color color;
+  final double rotation;
+  final double rotationSpeed;
+  final bool isCircle;
+
+  const _ConfettiParticle({
+    required this.origin,
+    required this.velocity,
+    required this.size,
+    required this.color,
+    required this.rotation,
+    required this.rotationSpeed,
+    required this.isCircle,
+  });
+}
+
+class _ConfettiPainter extends CustomPainter {
+  final double progress;
+  final List<_ConfettiParticle> particles;
+
+  const _ConfettiPainter({
+    required this.progress,
+    required this.particles,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final t = progress.clamp(0.0, 1.0);
+    final fadeOut = (1 - t).clamp(0.0, 1.0);
+    final fadeIn = (t / 0.14).clamp(0.0, 1.0);
+    final fade = fadeOut * fadeIn;
+
+    for (final p in particles) {
+      final x = p.origin.dx + (p.velocity.dx * t);
+      final y = p.origin.dy + (p.velocity.dy * t) + (560 * t * t);
+
+      if (x < -20 || x > size.width + 20 || y < -20 || y > size.height + 40) {
+        continue;
+      }
+
+      final paint = Paint()
+        ..color = p.color.withValues(alpha: fade);
+
+      if (p.isCircle) {
+        canvas.drawCircle(Offset(x, y), p.size * 0.42, paint);
+      } else {
+        final rect = RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(x, y), width: p.size, height: p.size * 0.58),
+          const Radius.circular(1.4),
+        );
+        canvas.drawRRect(rect, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ConfettiPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.particles != particles;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1247,22 +1328,10 @@ class _VolumeExerciseRow extends StatelessWidget {
         // Volume progress bar
         Padding(
           padding: const EdgeInsets.only(left: 40),
-          child: Container(
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(2),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: barWidth.clamp(0.0, 1.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: _kLime,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+          child: WorkoutVolumeProgressBar(
+            value: barWidth,
+            fillColor: _kLime,
+            backgroundColor: Colors.white.withValues(alpha: 0.06),
           ),
         ),
       ],
