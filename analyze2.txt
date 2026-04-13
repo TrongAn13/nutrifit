@@ -1,7 +1,0 @@
-Analyzing auth, app_router.dart...
-
-  error - lib\core\routes\app_router.dart:10:8 - Target of URI doesn't exist: '../../features/coach/presentation/screens/chat_screen.dart'. Try creating the file referenced by the URI, or try using a URI for a file that does exist. - uri_does_not_exist
-  error - lib\core\routes\app_router.dart:127:42 - The name 'ChatScreen' isn't a class. Try correcting the name to match an existing class. - creation_with_non_type
-   info - lib\features\auth\presentation\screens\register_screen.dart:368:9 - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
-
-3 issues found.

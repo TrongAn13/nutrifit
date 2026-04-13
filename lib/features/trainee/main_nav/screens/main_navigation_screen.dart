@@ -11,7 +11,7 @@ import '../../nutrition/logic/nutrition_event.dart';
 import '../../nutrition/logic/water_cubit.dart';
 import '../../nutrition/presentation/screens/nutrition_dashboard.dart';
 import '../../dashboard/presentation/screens/trainee_dashboard_screen.dart';
-import '../../../../shared/Screens/library/library_screen.dart';
+import '../../../../shared/screens/library/library_screen.dart';
 import '../../profile/presentation/screens/settings_screen.dart';
 import '../../workout/presentation/widgets/workout_mini_player.dart';
 import '../logic/bottom_nav_cubit.dart';

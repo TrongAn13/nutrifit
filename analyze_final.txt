@@ -1,5 +1,0 @@
-Analyzing coach, app_router.dart, main.dart, auth...
-
-   info - lib\features\coach\presentation\screens\coach_dashboard_screen.dart:167:39 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
-
-1 issue found.

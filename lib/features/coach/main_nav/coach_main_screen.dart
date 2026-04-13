@@ -4,7 +4,7 @@ import '../main_nav/coach_action_menu.dart';
 import '../presentation/screens/coach_client_list_screen.dart';
 import '../presentation/screens/coach_dashboard_screen.dart';
 import '../presentation/screens/coach_profile_screen.dart';
-import '../../../shared/Screens/library/library_screen.dart';
+import '../../../shared/screens/library/library_screen.dart';
 
 /// Main navigation shell for coach accounts.
 ///

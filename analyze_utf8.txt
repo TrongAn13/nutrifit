@@ -1,7 +1,0 @@
-Analyzing lib...
-
-warning - features\profile\presentation\screens\settings_screen.dart:1:8 - Unused import: 'package:cloud_firestore/cloud_firestore.dart'. Try removing the import directive. - unused_import
-   info - features\nutrition\presentation\widgets\add_food_sheet.dart:131:19 - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
-   info - features\profile\presentation\screens\edit_profile_screen.dart:147:23 - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
-
-3 issues found.

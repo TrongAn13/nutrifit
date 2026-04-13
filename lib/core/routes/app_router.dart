@@ -43,12 +43,12 @@ import '../../features/trainee/workout/logic/plan_detail_cubit.dart';
 import '../../features/trainee/workout/presentation/screens/active_exercise_detail_screen.dart';
 import '../../features/trainee/workout/presentation/screens/active_workout_screen.dart';
 import '../../features/trainee/workout/presentation/screens/create_plan_screen.dart';
-import '../../features/trainee/workout/presentation/screens/Select_exercise_screen.dart';
+import '../../features/trainee/workout/presentation/screens/select_exercise_screen.dart';
 
 import '../../features/trainee/workout/presentation/screens/edit_plan_screen.dart';
 import '../../features/trainee/workout/presentation/screens/routine_detail_screen.dart';
-import '../../shared/Screens/library/user_plans.dart';
-import '../../shared/Screens/plans/user_plan_detail_screen.dart';
+import '../../shared/screens/library/user_plans.dart';
+import '../../shared/screens/plans/user_plan_detail_screen.dart';
 
 
 /// Centralized router configuration using [GoRouter].

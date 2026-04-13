@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../../shared/Screens/library/exercise_detail_screen.dart';
+import '../../../../../shared/screens/library/exercise_detail_screen.dart';
 import '../../data/models/exercise_model.dart';
 import '../../data/models/routine_model.dart';
 import '../../logic/active_exercise_cubit.dart';

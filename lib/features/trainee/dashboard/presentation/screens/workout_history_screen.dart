@@ -5,7 +5,7 @@ import '../../logic/active_plan_cubit.dart';
 import '../../../workout/data/models/workout_history_model.dart';
 import '../../../workout/data/models/workout_plan_model.dart';
 import '../../../workout/presentation/screens/workout_record_screen.dart';
-import '../../../../../shared/Screens/plans/user_plan_detail_screen.dart';
+import '../../../../../shared/screens/plans/user_plan_detail_screen.dart';
 
 // -----------------------------------------------------------------------------
 // Constants

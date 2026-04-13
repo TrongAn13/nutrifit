@@ -1,9 +1,0 @@
-ERROR|COMPILE_TIME_ERROR|UNDEFINED_IDENTIFIER|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\active_workout_screen.dart|88|15|12|Undefined name 'workoutTimer'.
-ERROR|COMPILE_TIME_ERROR|UNDEFINED_IDENTIFIER|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\active_workout_screen.dart|92|19|14|Undefined name 'elapsedSeconds'.
-ERROR|COMPILE_TIME_ERROR|UNDEFINED_IDENTIFIER|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\active_workout_screen.dart|109|32|14|Undefined name 'elapsedSeconds'.
-ERROR|COMPILE_TIME_ERROR|UNCHECKED_USE_OF_NULLABLE_VALUE|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\active_workout_screen.dart|141|44|4|The property 'name' can't be unconditionally accessed because the receiver can be 'null'.
-ERROR|COMPILE_TIME_ERROR|UNCHECKED_USE_OF_NULLABLE_VALUE|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\active_workout_screen.dart|149|42|9|The property 'exercises' can't be unconditionally accessed because the receiver can be 'null'.
-ERROR|SYNTACTIC_ERROR|EXPECTED_TOKEN|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\active_workout_screen.dart|246|11|1|Expected to find ']'.
-WARNING|STATIC_WARNING|UNUSED_ELEMENT|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\active_workout_screen.dart|393|8|15|The declaration '_showQuitDialog' isn't referenced.
-WARNING|STATIC_WARNING|UNUSED_IMPORT|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\workout_dashboard.dart|13|8|39|Unused import: '../../logic/active_workout_cubit.dart'.
-INFO|HINT|DEPRECATED_MEMBER_USE|D:\\AndroidStudioPJ\\nutrifit\\lib\\features\\workout\\presentation\\screens\\workout_result_screen.dart|263|26|11|'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss.

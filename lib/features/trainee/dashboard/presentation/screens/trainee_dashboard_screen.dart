@@ -13,7 +13,7 @@ import '../../../workout/data/models/workout_plan_model.dart';
 import '../../../workout/presentation/screens/workout_record_screen.dart';
 import '../../../workout/presentation/screens/workout_ready_screen.dart';
 import '../../../../../core/routes/app_router.dart';
-import '../../../../../shared/Screens/plans/user_plan_detail_screen.dart' show MyPlanDetailScreen;
+import '../../../../../shared/screens/plans/user_plan_detail_screen.dart' show MyPlanDetailScreen;
 import 'trainee_schedule_screen.dart';
 
 class TraineeDashboardScreen extends StatefulWidget {

@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local analysis/report artifacts (keep out of git history)
+/tools/reports/*
+!/tools/reports/.gitkeep
